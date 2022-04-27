@@ -12,7 +12,7 @@ import {
   URI
 } from "../generated/OptionsSettlementEngine/OptionsSettlementEngine"
 
-import { Account, Balance, ExampleEntity, Option, Token, TokenRegistry, Transfer } from "../generated/schema"
+import { Account, Balance, Claim, ExampleEntity, Option, Token, TokenRegistry, Transfer } from "../generated/schema"
 
 import {
   TransferBatch as TransferBatchEvent,
@@ -164,7 +164,15 @@ export function handleApprovalForAll(event: ApprovalForAll): void {
   // - contract.write(...)
 }
 
-export function handleClaimRedeemed(event: ClaimRedeemed): void {}
+export function handleClaimRedeemed(event: ClaimRedeemed): void {
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+  }
+
+  // add data to claim
+}
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {}
 
@@ -177,7 +185,6 @@ export function handleNewChain(event: NewChain): void {
 
     if (option == null) {
         option = new Option(event.params.optionId.toString());
-        option.save();
     }
 
     option.underlyingAsset = event.params.underlyingAsset;
