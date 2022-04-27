@@ -18,9 +18,6 @@ type Option @entity {
   underlyingAmount: BigInt
   settlementSeed: BigInt
   exerciseAmount: BigInt
-  writer: Bytes # address
-  claimId: BigInt
-  amount: BigInt
 }
 
 type Claim @entity {

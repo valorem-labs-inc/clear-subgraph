@@ -249,6 +249,57 @@ export class Option extends Entity {
       this.set("exerciseAmount", Value.fromBigInt(<BigInt>value));
     }
   }
+
+  get writer(): Bytes | null {
+    let value = this.get("writer");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set writer(value: Bytes | null) {
+    if (!value) {
+      this.unset("writer");
+    } else {
+      this.set("writer", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get claimId(): BigInt | null {
+    let value = this.get("claimId");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set claimId(value: BigInt | null) {
+    if (!value) {
+      this.unset("claimId");
+    } else {
+      this.set("claimId", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get amount(): BigInt | null {
+    let value = this.get("amount");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set amount(value: BigInt | null) {
+    if (!value) {
+      this.unset("amount");
+    } else {
+      this.set("amount", Value.fromBigInt(<BigInt>value));
+    }
+  }
 }
 
 export class Claim extends Entity {

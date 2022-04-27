@@ -108,7 +108,11 @@ export function handleOptionsWritten(event: OptionsWritten): void {
       }
 
       // option written and now is able to have anyone use it
-      
+      option.writer = event.params.writer
+      option.claimId = event.params.claimId
+      option.amount = event.params.amount
+
+      option.save();
 }
 
 export function handleTransferBatch(event: TransferBatch): void {}
