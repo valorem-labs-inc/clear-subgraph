@@ -9,11 +9,104 @@ import {
   NewChain,
   OptionsExercised,
   OptionsWritten,
-  TransferBatch,
-  TransferSingle,
   URI
 } from "../generated/OptionsSettlementEngine/OptionsSettlementEngine"
-import { ExampleEntity, Option } from "../generated/schema"
+
+import { Account, Balance, ExampleEntity, Option, Token, TokenRegistry, Transfer } from "../generated/schema"
+
+import {
+  TransferBatch as TransferBatchEvent,
+  TransferSingle as TransferSingleEvent,
+  URI as URIEvent,
+  ApprovalForAll as ApprovalForAllEvent,
+} from '../generated/OptionsSettlementEngine/IERC1155';
+
+import { IERC1155MetadataURI } from '../generated/OptionsSettlementEngine/IERC1155MetadataURI';
+
+import {
+  constants,
+  events,
+  integers,
+  transactions,
+} from '@amxx/graphprotocol-utils';
+
+function fetchToken(registry: TokenRegistry, id: BigInt): Token {
+  let tokenid = registry.id.concat('-').concat(id.toHex());
+  let token = Token.load(tokenid);
+  if (token == null) {
+    token = new Token(tokenid);
+    token.registry = registry.id;
+    token.identifier = id;
+    token.totalSupply = new BigInt(0);
+  }
+  return token as Token;
+}
+
+function fetchBalance(token: Token, account: Account): Balance {
+  let balanceid = token.id.concat('-').concat(account.id);
+  let balance = Balance.load(balanceid);
+  if (balance == null) {
+    balance = new Balance(balanceid);
+    balance.token = token.id;
+    balance.account = account.id;
+    balance.value = new BigInt(0);
+  }
+  return balance as Balance;
+}
+
+function registerTransfer(
+  event: ethereum.Event,
+  suffix: string,
+  registry: TokenRegistry,
+  operator: Account,
+  from: Account,
+  to: Account,
+  id: BigInt,
+  value: BigInt
+): void {
+  let token = fetchToken(registry, id);
+  let contract = IERC1155MetadataURI.bind(event.address);
+  let ev = new Transfer(events.id(event).concat(suffix));
+
+  ev.transaction = transactions.log(event).id;
+  ev.timestamp = event.block.timestamp;
+  ev.token = token.id;
+  ev.operator = operator.id;
+  ev.from = from.id;
+  ev.to = to.id;
+  ev.value = value;
+
+  if (from.id == constants.ADDRESS_ZERO) {
+    token.totalSupply = token.totalSupply.plus(value)
+  } else {
+    let balance = fetchBalance(token, from);
+    balance.value = balance.value.minus(value);
+    balance.save();
+    ev.fromBalance = balance.id;
+  }
+
+  if (to.id == constants.ADDRESS_ZERO) {
+    token.totalSupply = token.totalSupply.minus(value);
+  } else {
+    let balance = fetchBalance(token, to);
+    balance.value = balance.value.plus(value);
+    balance.save();
+    ev.toBalance = balance.id;
+  }
+
+  let callResult = contract.try_uri(id);
+  if (!callResult.reverted) {
+    token.URI = callResult.value;
+  }
+
+  // let nameResult = contract.try_name();
+  // let symbolResult = contract.try_symbol();
+
+  token.save();
+  ev.save();
+}
+
+
 
 export function handleApprovalForAll(event: ApprovalForAll): void {
   // Entities can be loaded from the store using a string ID; this ID
@@ -30,7 +123,7 @@ export function handleApprovalForAll(event: ApprovalForAll): void {
   }
 
   // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
+  entity.count = entity.count.plus(BigInt.fromI32(1))
 
   // Entity fields can be set based on event parameters
   entity.owner = event.params.owner
@@ -115,8 +208,63 @@ export function handleOptionsWritten(event: OptionsWritten): void {
       option.save();
 }
 
-export function handleTransferBatch(event: TransferBatch): void {}
 
-export function handleTransferSingle(event: TransferSingle): void {}
 
-export function handleURI(event: URI): void {}
+
+
+export function handleTransferBatch(event: TransferBatch): void {
+  let registry = new TokenRegistry(event.address.toHex());
+  let operator = new Account(event.params.operator.toHex());
+  let from = new Account(event.params.from.toHex());
+  let to = new Account(event.params.to.toHex());
+  registry.save();
+  operator.save();
+  from.save();
+  to.save();
+
+  let ids = event.params.ids;
+  let values = event.params.values;
+  for (let i = 0; i < ids.length; ++i) {
+    registerTransfer(
+      event,
+      '-'.concat(i.toString()),
+      registry,
+      operator,
+      from,
+      to,
+      ids[i],
+      values[i]
+    );
+  }
+}
+
+export function handleTransferSingle(event: TransferSingle): void {
+  let registry = new TokenRegistry(event.address.toHex());
+  let operator = new Account(event.params.operator.toHex());
+  let from = new Account(event.params.from.toHex());
+  let to = new Account(event.params.to.toHex());
+  registry.save();
+  operator.save();
+  from.save();
+  to.save();
+
+  registerTransfer(
+    event,
+    '',
+    registry,
+    operator,
+    from,
+    to,
+    event.params.id,
+    event.params.value
+  );
+}
+
+export function handleURI(event: URI): void {
+  let registry = new TokenRegistry(event.address.toHex());
+  registry.save();
+
+  let token = fetchToken(registry, event.params.id);
+  token.URI = event.params.value;
+  token.save();
+}
