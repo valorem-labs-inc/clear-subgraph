@@ -13,7 +13,7 @@ import {
   TransferSingle,
   URI
 } from "../generated/OptionsSettlementEngine/OptionsSettlementEngine"
-import { ExampleEntity } from "../generated/schema"
+import { ExampleEntity, Option } from "../generated/schema"
 
 export function handleApprovalForAll(event: ApprovalForAll): void {
   // Entities can be loaded from the store using a string ID; this ID
@@ -79,11 +79,37 @@ export function handleFeeAccrued(event: FeeAccrued): void {}
 
 export function handleFeeSwept(event: FeeSwept): void {}
 
-export function handleNewChain(event: NewChain): void {}
+export function handleNewChain(event: NewChain): void {
+  let option = Option.load(event.params.optionId.toString());
+
+    if (option == null) {
+        option = new Option(event.params.optionId.toString());
+        option.save();
+    }
+
+    option.underlyingAsset = event.params.underlyingAsset;
+    option.exerciseTimestamp = event.params.exerciseTimestamp;
+    option.expiryTimestamp = event.params.expiryTimestamp;
+    option.exerciseAsset = event.params.exerciseAsset;
+    option.underlyingAmount = event.params.underlyingAmount;
+    option.exerciseAmount = event.params.exerciseAmount;
+
+    option.save();
+}
 
 export function handleOptionsExercised(event: OptionsExercised): void {}
 
-export function handleOptionsWritten(event: OptionsWritten): void {}
+export function handleOptionsWritten(event: OptionsWritten): void {
+  let option = Option.load(event.params.optionId.toString());
+
+      if (option == null) {
+          option = new Option(event.params.optionId.toString());
+          option.save();
+      }
+
+      // option written and now is able to have anyone use it
+      
+}
 
 export function handleTransferBatch(event: TransferBatch): void {}
 

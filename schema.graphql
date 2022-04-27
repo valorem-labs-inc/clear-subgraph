@@ -4,3 +4,26 @@ type ExampleEntity @entity {
   owner: Bytes! # address
   operator: Bytes! # address
 }
+
+type User @entity {
+  id: ID!
+}
+
+type Option @entity {
+  id: ID!
+  underlyingAsset: Bytes!
+  exerciseTimestamp: BigInt
+  expiryTimestamp: BigInt
+  exerciseAsset: Bytes
+  underlyingAmount: BigInt
+  settlementSeed: BigInt
+  exerciseAmount: BigInt
+}
+
+type Claim @entity {
+  id: ID!
+  option: BigInt
+  amountWritten: BigInt
+  amountExercised: BigInt
+  claimed: Boolean
+}
