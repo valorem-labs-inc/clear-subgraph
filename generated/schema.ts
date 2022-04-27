@@ -392,6 +392,91 @@ export class Claim extends Entity {
   set claimed(value: boolean) {
     this.set("claimed", Value.fromBoolean(value));
   }
+
+  get redeemer(): Bytes | null {
+    let value = this.get("redeemer");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set redeemer(value: Bytes | null) {
+    if (!value) {
+      this.unset("redeemer");
+    } else {
+      this.set("redeemer", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get exerciseAsset(): Bytes | null {
+    let value = this.get("exerciseAsset");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set exerciseAsset(value: Bytes | null) {
+    if (!value) {
+      this.unset("exerciseAsset");
+    } else {
+      this.set("exerciseAsset", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get underlyingAsset(): Bytes | null {
+    let value = this.get("underlyingAsset");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set underlyingAsset(value: Bytes | null) {
+    if (!value) {
+      this.unset("underlyingAsset");
+    } else {
+      this.set("underlyingAsset", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get exerciseAmount(): BigInt | null {
+    let value = this.get("exerciseAmount");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set exerciseAmount(value: BigInt | null) {
+    if (!value) {
+      this.unset("exerciseAmount");
+    } else {
+      this.set("exerciseAmount", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get underlyingAmount(): BigInt | null {
+    let value = this.get("underlyingAmount");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set underlyingAmount(value: BigInt | null) {
+    if (!value) {
+      this.unset("underlyingAmount");
+    } else {
+      this.set("underlyingAmount", Value.fromBigInt(<BigInt>value));
+    }
+  }
 }
 
 export class Account extends Entity {

@@ -29,6 +29,11 @@ type Claim @entity {
   amountWritten: BigInt
   amountExercised: BigInt
   claimed: Boolean
+  redeemer: Bytes # address
+  exerciseAsset: Bytes # address
+  underlyingAsset: Bytes # address
+  exerciseAmount: BigInt
+  underlyingAmount: BigInt
 }
 
 

@@ -172,6 +172,14 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   }
 
   // add data to claim
+  claim.option = event.params.optionId;
+  claim.redeemer = event.params.redeemer;
+  claim.exerciseAsset = event.params.exerciseAsset;
+  claim.underlyingAsset = event.params.underlyingAsset;
+  claim.exerciseAmount = event.params.exerciseAmount;
+  claim.underlyingAmount = event.params.underlyingAmount;
+
+  claim.save();
 }
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {}
