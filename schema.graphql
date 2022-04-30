@@ -21,6 +21,7 @@ type Option @entity {
   writer: Bytes # address
   claimId: BigInt
   amount: BigInt
+  exercisee: Bytes
 }
 
 type Claim @entity {

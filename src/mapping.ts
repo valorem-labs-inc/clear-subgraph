@@ -205,7 +205,18 @@ export function handleNewChain(event: NewChain): void {
     option.save();
 }
 
-export function handleOptionsExercised(event: OptionsExercised): void {}
+export function handleOptionsExercised(event: OptionsExercised): void {
+  let option = Option.load(event.params.optionId.toString());
+
+  if (option == null) {
+    option = new Option(event.params.optionId.toString());
+  }
+
+  option.exercisee = event.params.exercisee;
+  option.amount = event.params.amount;
+
+  option.save();
+}
 
 export function handleOptionsWritten(event: OptionsWritten): void {
   let option = Option.load(event.params.optionId.toString());

@@ -300,6 +300,23 @@ export class Option extends Entity {
       this.set("amount", Value.fromBigInt(<BigInt>value));
     }
   }
+
+  get exercisee(): Bytes | null {
+    let value = this.get("exercisee");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set exercisee(value: Bytes | null) {
+    if (!value) {
+      this.unset("exercisee");
+    } else {
+      this.set("exercisee", Value.fromBytes(<Bytes>value));
+    }
+  }
 }
 
 export class Claim extends Entity {
