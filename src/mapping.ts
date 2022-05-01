@@ -182,7 +182,19 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   claim.save();
 }
 
-export function handleExerciseAssigned(event: ExerciseAssigned): void {}
+export function handleExerciseAssigned(event: ExerciseAssigned): void {
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+  }
+
+  claim.option = event.params.optionId;
+  claim.amountExercised = event.params.amountAssigned;
+  claim.claimed = true;
+
+  claim.save();
+}
 
 export function handleFeeAccrued(event: FeeAccrued): void {}
 
