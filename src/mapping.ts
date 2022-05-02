@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import { BigInt, ethereum } from "@graphprotocol/graph-ts"
 import {
   OptionsSettlementEngine,
   ApprovalForAll,
@@ -250,7 +250,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
 
 
-export function handleTransferBatch(event: TransferBatch): void {
+export function handleTransferBatch(event: TransferBatchEvent): void {
   let registry = new TokenRegistry(event.address.toHex());
   let operator = new Account(event.params.operator.toHex());
   let from = new Account(event.params.from.toHex());
@@ -276,7 +276,7 @@ export function handleTransferBatch(event: TransferBatch): void {
   }
 }
 
-export function handleTransferSingle(event: TransferSingle): void {
+export function handleTransferSingle(event: TransferSingleEvent): void {
   let registry = new TokenRegistry(event.address.toHex());
   let operator = new Account(event.params.operator.toHex());
   let from = new Account(event.params.from.toHex());
