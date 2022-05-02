@@ -27,6 +27,10 @@ dataSources:
       abis:
         - name: OptionsSettlementEngine
           file: OptionsSettlementEngine/abis/OptionsSettlementEngine.json
+        - name: IERC1155
+          file: OptionsSettlementEngine/abis/IERC1155.json
+        - name: IERC1155MetadataURI
+          file: OptionsSettlementEngine/abis/IERC1155MetadataURI.json
       eventHandlers:
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll

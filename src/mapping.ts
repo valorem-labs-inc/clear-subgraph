@@ -12,7 +12,7 @@ import {
   URI
 } from "../generated/OptionsSettlementEngine/OptionsSettlementEngine"
 
-import { Account, Balance, Claim, ExampleEntity, Option, Token, TokenRegistry, Transfer } from "../generated/schema"
+import { Account, Balance, Claim, ExampleEntity, Option, Token, TokenRegistry, Transaction, Transfer } from "../generated/schema"
 
 import {
   TransferBatch as TransferBatchEvent,
@@ -22,13 +22,6 @@ import {
 } from '../generated/OptionsSettlementEngine/IERC1155';
 
 import { IERC1155MetadataURI } from '../generated/OptionsSettlementEngine/IERC1155MetadataURI';
-
-import {
-  constants,
-  events,
-  integers,
-  transactions,
-} from '@amxx/graphprotocol-utils';
 
 function fetchToken(registry: TokenRegistry, id: BigInt): Token {
   let tokenid = registry.id.concat('-').concat(id.toHex());
@@ -66,9 +59,13 @@ function registerTransfer(
 ): void {
   let token = fetchToken(registry, id);
   let contract = IERC1155MetadataURI.bind(event.address);
-  let ev = new Transfer(events.id(event).concat(suffix));
+  let ev = new Transfer(event.block.number.toString().concat('-').concat(event.logIndex.toString()).concat(suffix));
 
-  ev.transaction = transactions.log(event).id;
+  let tx = new Transaction(event.transaction.hash.toHex())
+		tx.timestamp   = event.block.timestamp
+		tx.blockNumber = event.block.number
+    tx.save();
+  ev.transaction = tx.id;
   ev.timestamp = event.block.timestamp;
   ev.token = token.id;
   ev.operator = operator.id;
@@ -76,7 +73,7 @@ function registerTransfer(
   ev.to = to.id;
   ev.value = value;
 
-  if (from.id == constants.ADDRESS_ZERO) {
+  if (from.id == '0x0000000000000000000000000000000000000000') {
     token.totalSupply = token.totalSupply.plus(value)
   } else {
     let balance = fetchBalance(token, from);
@@ -85,7 +82,7 @@ function registerTransfer(
     ev.fromBalance = balance.id;
   }
 
-  if (to.id == constants.ADDRESS_ZERO) {
+  if (to.id == '0x0000000000000000000000000000000000000000') {
     token.totalSupply = token.totalSupply.minus(value);
   } else {
     let balance = fetchBalance(token, to);
@@ -196,9 +193,13 @@ export function handleExerciseAssigned(event: ExerciseAssigned): void {
   claim.save();
 }
 
-export function handleFeeAccrued(event: FeeAccrued): void {}
+export function handleFeeAccrued(event: FeeAccrued): void {
+  
+}
 
-export function handleFeeSwept(event: FeeSwept): void {}
+export function handleFeeSwept(event: FeeSwept): void {
+
+}
 
 export function handleNewChain(event: NewChain): void {
   let option = Option.load(event.params.optionId.toString());
