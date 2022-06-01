@@ -13,9 +13,6 @@ type Option @entity {
   settlementSeed: BigInt
   exerciseAmount: BigInt
   creator: Bytes # address
-  claimId: BigInt
-  amount: BigInt
-  exercisee: Bytes
 }
 
 type Claim @entity {
@@ -24,7 +21,7 @@ type Claim @entity {
   amountWritten: BigInt
   amountExercised: BigInt
   claimed: Boolean
-  redeemer: Bytes # address
+  claimant: Bytes # address
   exerciseAsset: Bytes # address
   underlyingAsset: Bytes # address
   exerciseAmount: BigInt
@@ -46,11 +43,10 @@ type TokenRegistry @entity {
   tokens: [Token!]! @derivedFrom(field: "registry")
 }
 
-"""
-TODO(Token should contain a type enumeration reflecting which type of token it is in the protocol for query)
-"""
-
 type Token @entity {
+  """
+  For type, 2 is an option, 3 is a claim
+  """
   id: ID!
   type: Int
   registry: TokenRegistry!

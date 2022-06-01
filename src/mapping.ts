@@ -110,7 +110,8 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   // add data to claim
   claim.option = event.params.optionId;
-  claim.redeemer = event.params.redeemer;
+  claim.claimed = true;
+  claim.claimant = event.params.redeemer;
   claim.exerciseAsset = event.params.exerciseAsset;
   claim.underlyingAsset = event.params.underlyingAsset;
   claim.exerciseAmount = event.params.exerciseAmount;
@@ -120,17 +121,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 }
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {
-  let claim = Claim.load(event.params.claimId.toString());
 
-  if (claim == null) {
-    claim = new Claim(event.params.claimId.toString());
-  }
-
-  claim.option = event.params.optionId;
-  claim.amountExercised = event.params.amountAssigned;
-  claim.claimed = true;
-
-  claim.save();
 }
 
 export function handleFeeAccrued(event: FeeAccrued): void {
@@ -169,16 +160,7 @@ export function handleNewChain(event: NewChain): void {
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
-  let option = Option.load(event.params.optionId.toString());
 
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-  }
-
-  option.exercisee = event.params.exercisee;
-  option.amount = event.params.amount;
-
-  option.save();
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
@@ -188,10 +170,6 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     option = new Option(event.params.optionId.toString());
     option.save();
   }
-
-      // option written and now is able to have anyone use it
-  option.claimId = event.params.claimId
-  option.amount = event.params.amount
 
   option.save();
 
