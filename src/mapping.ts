@@ -1,5 +1,6 @@
 import { BigInt, ethereum } from "@graphprotocol/graph-ts"
 import {
+  OptionsSettlementEngine,
   ClaimRedeemed,
   ExerciseAssigned,
   FeeAccrued,
@@ -142,19 +143,29 @@ export function handleFeeSwept(event: FeeSwept): void {
 
 export function handleNewChain(event: NewChain): void {
   let option = Option.load(event.params.optionId.toString());
+  let registry = new TokenRegistry(event.address.toHex());
 
     if (option == null) {
         option = new Option(event.params.optionId.toString());
     }
 
-    option.underlyingAsset = event.params.underlyingAsset;
-    option.exerciseTimestamp = event.params.exerciseTimestamp;
-    option.expiryTimestamp = event.params.expiryTimestamp;
-    option.exerciseAsset = event.params.exerciseAsset;
-    option.underlyingAmount = event.params.underlyingAmount;
-    option.exerciseAmount = event.params.exerciseAmount;
+  let token = fetchToken(registry, event.params.optionId);
+  let engine = OptionsSettlementEngine.bind(event.address);
+    // How to make a call here?
+  let callResult = engine.try_tokenType(event.params.optionId);
+  if (!callResult.reverted) {
+    token.type = callResult.value;
+    token.save();
+  }
 
-    option.save();
+  option.underlyingAsset = event.params.underlyingAsset;
+  option.exerciseTimestamp = event.params.exerciseTimestamp;
+  option.expiryTimestamp = event.params.expiryTimestamp;
+  option.exerciseAsset = event.params.exerciseAsset;
+  option.underlyingAmount = event.params.underlyingAmount;
+  option.exerciseAmount = event.params.exerciseAmount;
+
+  option.save();
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
@@ -179,7 +190,6 @@ export function handleOptionsWritten(event: OptionsWritten): void {
       }
 
       // option written and now is able to have anyone use it
-      option.writer = event.params.writer
       option.claimId = event.params.claimId
       option.amount = event.params.amount
 

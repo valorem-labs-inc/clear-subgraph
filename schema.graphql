@@ -12,7 +12,7 @@ type Option @entity {
   underlyingAmount: BigInt
   settlementSeed: BigInt
   exerciseAmount: BigInt
-  writer: Bytes # address
+  creator: Bytes # address
   claimId: BigInt
   amount: BigInt
   exercisee: Bytes
@@ -52,6 +52,7 @@ TODO(Token should contain a type enumeration reflecting which type of token it i
 
 type Token @entity {
   id: ID!
+  type: Int
   registry: TokenRegistry!
   identifier: BigInt!
   URI: String
