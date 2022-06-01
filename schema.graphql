@@ -1,9 +1,3 @@
-type ExampleEntity @entity {
-  id: ID!
-  count: BigInt!
-  owner: Bytes! # address
-  operator: Bytes! # address
-}
 
 type User @entity {
   id: ID!
@@ -18,7 +12,7 @@ type Option @entity {
   underlyingAmount: BigInt
   settlementSeed: BigInt
   exerciseAmount: BigInt
-  writer: Bytes # address
+  creator: Bytes # address
   claimId: BigInt
   amount: BigInt
   exercisee: Bytes
@@ -37,9 +31,6 @@ type Claim @entity {
   underlyingAmount: BigInt
 }
 
-
-
-
 type Account @entity {
   id: ID!
   balances: [Balance!]! @derivedFrom(field: "account")
@@ -55,8 +46,13 @@ type TokenRegistry @entity {
   tokens: [Token!]! @derivedFrom(field: "registry")
 }
 
+"""
+TODO(Token should contain a type enumeration reflecting which type of token it is in the protocol for query)
+"""
+
 type Token @entity {
   id: ID!
+  type: Int
   registry: TokenRegistry!
   identifier: BigInt!
   URI: String

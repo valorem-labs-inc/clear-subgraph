@@ -13,7 +13,6 @@ dataSources:
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - ApprovalForAll
         - ClaimRedeemed
         - ExerciseAssigned
         - FeeAccrued
@@ -32,8 +31,6 @@ dataSources:
         - name: IERC1155MetadataURI
           file: ./abis/IERC1155MetadataURI.json
       eventHandlers:
-        - event: ApprovalForAll(indexed address,indexed address,bool)
-          handler: handleApprovalForAll
         - event: ClaimRedeemed(indexed uint256,indexed uint256,indexed address,address,address,uint96,uint96)
           handler: handleClaimRedeemed
         - event: ExerciseAssigned(indexed uint256,indexed uint256,uint112)
