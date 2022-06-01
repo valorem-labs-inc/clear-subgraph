@@ -184,16 +184,25 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 export function handleOptionsWritten(event: OptionsWritten): void {
   let option = Option.load(event.params.optionId.toString());
 
-      if (option == null) {
-          option = new Option(event.params.optionId.toString());
-          option.save();
-      }
+  if (option == null) {
+    option = new Option(event.params.optionId.toString());
+    option.save();
+  }
 
       // option written and now is able to have anyone use it
-      option.claimId = event.params.claimId
-      option.amount = event.params.amount
+  option.claimId = event.params.claimId
+  option.amount = event.params.amount
 
-      option.save();
+  option.save();
+
+  let registry = new TokenRegistry(event.address.toHex());
+  let token = fetchToken(registry, event.params.claimId);
+  let engine = OptionsSettlementEngine.bind(event.address);
+  let callResult = engine.try_tokenType(event.params.claimId);
+  if (!callResult.reverted) {
+    token.type = callResult.value;
+    token.save();
+  }
 }
 
 
