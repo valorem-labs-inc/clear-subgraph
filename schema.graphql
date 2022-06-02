@@ -24,6 +24,15 @@ type Claim @entity {
     underlyingAmount: BigInt
 }
 
+type Fee @entity {
+    id: ID!
+    asset: Account # address
+    token: Account # address
+    payor: Account # address
+    payee: Account # address
+    amount: BigInt
+}
+
 type Account @entity {
     id: ID!
     asERC1155: ERC1155Contract
@@ -34,6 +43,8 @@ type Account @entity {
     ERC1155transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "to")
     ERC1155transferOperatorEvent: [ERC1155Transfer!]! @derivedFrom(field: "operator")
     events: [Event!]! @derivedFrom(field: "emitter")
+    feesAccrued: [Fee!]
+    feesReceived: [Fee!]
 }
 
 type ERC1155Contract @entity(immutable: true) {

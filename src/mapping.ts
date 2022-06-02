@@ -7,6 +7,7 @@ import {
   Account,
   ERC1155Contract,
   ERC1155Transfer,
+  Fee,
 } from '../generated/schema'
 
 import {
@@ -80,11 +81,29 @@ export function handleExerciseAssigned(event: ExerciseAssigned): void {
 }
 
 export function handleFeeAccrued(event: FeeAccrued): void {
+  let account = fetchAccount(event.params.payor);
+  let fee = new Fee(event.params.asset.toString());
+  fee.amount = event.params.amount;
+  fee.asset = event.params.asset;
+  fee.payor = event.params.payor;
 
+  account.feesAccrued.push(fee.id);
+
+  fee.save();
+  account.save();
 }
 
 export function handleFeeSwept(event: FeeSwept): void {
+  let account = fetchAccount(event.params.feeTo);
+  let fee = new Fee(event.params.token.toString());
+  fee.payee = event.params.feeTo;
+  fee.token = event.params.token;
+  fee.amount = event.params.amount;
 
+  account.feesReceived.push(fee.amount);
+
+  fee.save()
+  account.save()
 }
 
 export function handleNewChain(event: NewChain): void {
