@@ -66,9 +66,9 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   // add data to claim
   claim.option = event.params.optionId;
   claim.claimed = true;
-  claim.claimant = event.params.redeemer;
-  claim.exerciseAsset = event.params.exerciseAsset;
-  claim.underlyingAsset = event.params.underlyingAsset;
+  claim.claimant = fetchAccount(event.params.redeemer).id;
+  claim.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
+  claim.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
   claim.exerciseAmount = event.params.exerciseAmount;
   claim.underlyingAmount = event.params.underlyingAmount;
 
@@ -104,10 +104,10 @@ export function handleNewChain(event: NewChain): void {
     token.save();
   }
 
-  option.underlyingAsset = event.params.underlyingAsset;
+  option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
   option.exerciseTimestamp = event.params.exerciseTimestamp;
   option.expiryTimestamp = event.params.expiryTimestamp;
-  option.exerciseAsset = event.params.exerciseAsset;
+  option.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
   option.underlyingAmount = event.params.underlyingAmount;
   option.exerciseAmount = event.params.exerciseAmount;
 
@@ -138,7 +138,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   claim.claimed = false;
   claim.writer = fetchAccount(event.transaction.from).id;
   claim.save();
-  
+
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
   let engine = OptionSettlementEngine.bind(event.address);
