@@ -60,6 +60,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   if (claim == null) {
     claim = new Claim(event.params.claimId.toString());
+    claim.save()
   }
 
   // add data to claim
@@ -125,7 +126,19 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     option.save();
   }
 
-  option.save();
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+    claim.save()
+  }
+
+  // TODO(There should be a claim created event or something containing the required metadata)
+  claim.option = event.params.optionId;
+  claim.claimed = false;
+  claim.save();
+
+
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
