@@ -1,27 +1,27 @@
 type Option @entity {
     id: ID!
-    underlyingAsset: Account!
-    exerciseTimestamp: BigInt!
-    expiryTimestamp: BigInt!
-    exerciseAsset: Account!
-    underlyingAmount: BigInt!
-    settlementSeed: BigInt!
-    exerciseAmount: BigInt!
-    creator: Account! # address
+    underlyingAsset: Account
+    exerciseTimestamp: BigInt
+    expiryTimestamp: BigInt
+    exerciseAsset: Account
+    underlyingAmount: BigInt
+    settlementSeed: BigInt
+    exerciseAmount: BigInt
+    creator: Account # address
 }
 
 type Claim @entity {
     id: ID!
-    option: BigInt!
-    writer: Account!
-    amountWritten: BigInt!
-    amountExercised: BigInt!
+    option: BigInt
+    writer: Account
+    amountWritten: BigInt
+    amountExercised: BigInt
     claimed: Boolean
-    claimant: Account! # address
-    exerciseAsset: Account! # address
-    underlyingAsset: Account! # address
-    exerciseAmount: BigInt!
-    underlyingAmount: BigInt!
+    claimant: Account # address
+    exerciseAsset: Account # address
+    underlyingAsset: Account # address
+    exerciseAmount: BigInt
+    underlyingAmount: BigInt
 }
 
 type Account @entity {
