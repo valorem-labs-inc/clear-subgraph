@@ -1,6 +1,17 @@
-import { BigInt, ethereum } from "@graphprotocol/graph-ts"
 import {
-  OptionsSettlementEngine,
+  ethereum,
+  BigInt, Address,
+} from '@graphprotocol/graph-ts'
+
+import {
+  Account,
+  ERC1155Contract,
+  ERC1155Transfer,
+} from '../generated/schema'
+
+import {
+  OptionSettlementEngine,
+  ApprovalForAll as ApprovalForAllEvent,
   ClaimRedeemed,
   ExerciseAssigned,
   FeeAccrued,
@@ -8,98 +19,41 @@ import {
   NewChain,
   OptionsExercised,
   OptionsWritten,
-  URI
-} from "../generated/OptionsSettlementEngine/OptionsSettlementEngine"
-
-import { Account, Balance, Claim, Option, Token, TokenRegistry, Transaction, Transfer } from "../generated/schema"
-
-import {
   TransferBatch as TransferBatchEvent,
   TransferSingle as TransferSingleEvent,
-} from '../generated/OptionsSettlementEngine/IERC1155';
+  URI as URIEvent
+} from "../generated/OptionSettlementEngine/OptionSettlementEngine"
+import { Option, Claim } from "../generated/schema"
 
-import { IERC1155MetadataURI } from '../generated/OptionsSettlementEngine/IERC1155MetadataURI';
+import {
+  constants
+} from './constants'
 
-function fetchToken(registry: TokenRegistry, id: BigInt): Token {
-  let tokenid = registry.id.concat('-').concat(id.toHex());
-  let token = Token.load(tokenid);
-  if (token == null) {
-    token = new Token(tokenid);
-    token.registry = registry.id;
-    token.identifier = id;
-    token.totalSupply = new BigInt(0);
-  }
-  return token as Token;
-}
+import {
+  decimals
+} from './decimals'
 
-function fetchBalance(token: Token, account: Account): Balance {
-  let balanceid = token.id.concat('-').concat(account.id);
-  let balance = Balance.load(balanceid);
-  if (balance == null) {
-    balance = new Balance(balanceid);
-    balance.token = token.id;
-    balance.account = account.id;
-    balance.value = new BigInt(0);
-  }
-  return balance as Balance;
-}
+import {
+  events
+} from './events'
 
-function registerTransfer(
-  event: ethereum.Event,
-  suffix: string,
-  registry: TokenRegistry,
-  operator: Account,
-  from: Account,
-  to: Account,
-  id: BigInt,
-  value: BigInt
-): void {
-  let token = fetchToken(registry, id);
-  let contract = IERC1155MetadataURI.bind(event.address);
-  let ev = new Transfer(event.block.number.toString().concat('-').concat(event.logIndex.toString()).concat(suffix));
+import {
+  transactions
+} from './transactions'
 
-  let tx = new Transaction(event.transaction.hash.toHex())
-		tx.timestamp   = event.block.timestamp
-		tx.blockNumber = event.block.number
-    tx.save();
-  ev.transaction = tx.id;
-  ev.timestamp = event.block.timestamp;
-  ev.token = token.id;
-  ev.operator = operator.id;
-  ev.from = from.id;
-  ev.to = to.id;
-  ev.value = value;
+import {
+  fetchAccount,
+} from './fetch/account'
 
-  if (from.id == '0x0000000000000000000000000000000000000000') {
-    token.totalSupply = token.totalSupply.plus(value)
-  } else {
-    let balance = fetchBalance(token, from);
-    balance.value = balance.value.minus(value);
-    balance.save();
-    ev.fromBalance = balance.id;
-  }
+import {
+  fetchERC1155,
+  fetchERC1155Token,
+  fetchERC1155Balance,
+  fetchERC721Operator,
+  replaceURI,
+} from './fetch/erc1155'
 
-  if (to.id == '0x0000000000000000000000000000000000000000') {
-    token.totalSupply = token.totalSupply.minus(value);
-  } else {
-    let balance = fetchBalance(token, to);
-    balance.value = balance.value.plus(value);
-    balance.save();
-    ev.toBalance = balance.id;
-  }
-
-  let callResult = contract.try_uri(id);
-  if (!callResult.reverted) {
-    token.URI = callResult.value;
-  }
-
-  // let nameResult = contract.try_name();
-  // let symbolResult = contract.try_symbol();
-
-  token.save();
-  ev.save();
-}
-
+// TODO(Implement these)
 
 export function handleClaimRedeemed(event: ClaimRedeemed): void {
   let claim = Claim.load(event.params.claimId.toString());
@@ -110,7 +64,8 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   // add data to claim
   claim.option = event.params.optionId;
-  claim.redeemer = event.params.redeemer;
+  claim.claimed = true;
+  claim.claimant = event.params.redeemer;
   claim.exerciseAsset = event.params.exerciseAsset;
   claim.underlyingAsset = event.params.underlyingAsset;
   claim.exerciseAmount = event.params.exerciseAmount;
@@ -120,21 +75,11 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 }
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {
-  let claim = Claim.load(event.params.claimId.toString());
 
-  if (claim == null) {
-    claim = new Claim(event.params.claimId.toString());
-  }
-
-  claim.option = event.params.optionId;
-  claim.amountExercised = event.params.amountAssigned;
-  claim.claimed = true;
-
-  claim.save();
 }
 
 export function handleFeeAccrued(event: FeeAccrued): void {
-  
+
 }
 
 export function handleFeeSwept(event: FeeSwept): void {
@@ -143,15 +88,15 @@ export function handleFeeSwept(event: FeeSwept): void {
 
 export function handleNewChain(event: NewChain): void {
   let option = Option.load(event.params.optionId.toString());
-  let registry = new TokenRegistry(event.address.toHex());
 
-    if (option == null) {
-        option = new Option(event.params.optionId.toString());
-    }
 
-  let token = fetchToken(registry, event.params.optionId);
-  let engine = OptionsSettlementEngine.bind(event.address);
-    // How to make a call here?
+  if (option == null) {
+    option = new Option(event.params.optionId.toString());
+  }
+
+  let contract = fetchERC1155(event.address)
+  let token = fetchERC1155Token(contract, event.params.optionId);
+  let engine = OptionSettlementEngine.bind(event.address);
   let callResult = engine.try_tokenType(event.params.optionId);
   if (!callResult.reverted) {
     token.type = callResult.value;
@@ -169,16 +114,7 @@ export function handleNewChain(event: NewChain): void {
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
-  let option = Option.load(event.params.optionId.toString());
 
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-  }
-
-  option.exercisee = event.params.exercisee;
-  option.amount = event.params.amount;
-
-  option.save();
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
@@ -189,15 +125,11 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     option.save();
   }
 
-      // option written and now is able to have anyone use it
-  option.claimId = event.params.claimId
-  option.amount = event.params.amount
-
   option.save();
 
-  let registry = new TokenRegistry(event.address.toHex());
-  let token = fetchToken(registry, event.params.claimId);
-  let engine = OptionsSettlementEngine.bind(event.address);
+  let contract = fetchERC1155(event.address)
+  let token = fetchERC1155Token(contract, event.params.claimId);
+  let engine = OptionSettlementEngine.bind(event.address);
   let callResult = engine.try_tokenType(event.params.claimId);
   if (!callResult.reverted) {
     token.type = callResult.value;
@@ -205,60 +137,130 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   }
 }
 
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
 
-export function handleTransferBatch(event: TransferBatchEvent): void {
-  let registry = new TokenRegistry(event.address.toHex());
-  let operator = new Account(event.params.operator.toHex());
-  let from = new Account(event.params.from.toHex());
-  let to = new Account(event.params.to.toHex());
-  registry.save();
-  operator.save();
-  from.save();
-  to.save();
+function registerTransfer(
+    event:    ethereum.Event,
+    suffix:   string,
+    contract: ERC1155Contract,
+    operator: Account,
+    from:     Account,
+    to:       Account,
+    id:       BigInt,
+    value:    BigInt)
+    : void
+{
+  let token      = fetchERC1155Token(contract, id)
+  // TODO(Should these really be ignored?)
+  // @ts-ignore
+  let ev         = new ERC1155Transfer(events.id(event).concat(suffix))
+  ev.emitter     = token.id
+  // @ts-ignore
+  ev.transaction = transactions.log(event).id
+  ev.timestamp   = event.block.timestamp
+  ev.contract    = contract.id
+  ev.token       = token.id
+  ev.operator    = operator.id
+  ev.value       = decimals.toDecimals(value)
+  ev.valueExact  = value
 
-  let ids = event.params.ids;
-  let values = event.params.values;
-  for (let i = 0; i < ids.length; ++i) {
-    registerTransfer(
+  if (Address.fromString(from.id) == constants.ADDRESS_ZERO) {
+    let totalSupply        = fetchERC1155Balance(token, null)
+    totalSupply.valueExact = totalSupply.valueExact.plus(value)
+    totalSupply.value      = decimals.toDecimals(totalSupply.valueExact)
+    totalSupply.save()
+  } else {
+    let balance            = fetchERC1155Balance(token, from)
+    balance.valueExact     = balance.valueExact.minus(value)
+    balance.value          = decimals.toDecimals(balance.valueExact)
+    balance.save()
+
+    ev.from                = from.id
+    ev.fromBalance         = balance.id
+  }
+
+  if (Address.fromString(to.id) == constants.ADDRESS_ZERO) {
+    let totalSupply        = fetchERC1155Balance(token, null)
+    totalSupply.valueExact = totalSupply.valueExact.minus(value)
+    totalSupply.value      = decimals.toDecimals(totalSupply.valueExact)
+    totalSupply.save()
+  } else {
+    let balance            = fetchERC1155Balance(token, to)
+    balance.valueExact     = balance.valueExact.plus(value)
+    balance.value          = decimals.toDecimals(balance.valueExact)
+    balance.save()
+
+    ev.to                  = to.id
+    ev.toBalance           = balance.id
+  }
+
+  token.save()
+  ev.save()
+}
+
+export function handleTransferSingle(event: TransferSingleEvent): void
+{
+  let contract = fetchERC1155(event.address)
+  let operator = fetchAccount(event.params.operator)
+  let from     = fetchAccount(event.params.from)
+  let to       = fetchAccount(event.params.to)
+
+  registerTransfer(
       event,
-      '-'.concat(i.toString()),
-      registry,
+      "",
+      contract,
       operator,
       from,
       to,
-      ids[i],
-      values[i]
-    );
+      event.params.id,
+      event.params.amount
+  )
+}
+
+export function handleTransferBatch(event: TransferBatchEvent): void
+{
+  let contract = fetchERC1155(event.address)
+  let operator = fetchAccount(event.params.operator)
+  let from     = fetchAccount(event.params.from)
+  let to       = fetchAccount(event.params.to)
+
+  let ids    = event.params.ids
+  let values = event.params.amounts
+
+  // If this equality doesn't hold (some devs actually don't follox the ERC specifications) then we just can't make
+  // sens of what is happening. Don't try to make something out of stupid code, and just throw the event. This
+  // contract doesn't follow the standard anyway.
+  if(ids.length == values.length)
+  {
+    for (let i = 0;  i < ids.length; ++i)
+    {
+      registerTransfer(
+          event,
+          "/".concat(i.toString()),
+          contract,
+          operator,
+          from,
+          to,
+          ids[i],
+          values[i]
+      )
+    }
   }
 }
 
-export function handleTransferSingle(event: TransferSingleEvent): void {
-  let registry = new TokenRegistry(event.address.toHex());
-  let operator = new Account(event.params.operator.toHex());
-  let from = new Account(event.params.from.toHex());
-  let to = new Account(event.params.to.toHex());
-  registry.save();
-  operator.save();
-  from.save();
-  to.save();
-
-  registerTransfer(
-    event,
-    '',
-    registry,
-    operator,
-    from,
-    to,
-    event.params.id,
-    event.params.value
-  );
+export function handleApprovalForAll(event: ApprovalForAllEvent): void {
+  let contract         = fetchERC1155(event.address)
+  let owner            = fetchAccount(event.params.owner)
+  let operator         = fetchAccount(event.params.operator)
+  let delegation       = fetchERC721Operator(contract, owner, operator)
+  delegation.approved  = event.params.approved
+  delegation.save()
 }
 
-export function handleURI(event: URI): void {
-  let registry = new TokenRegistry(event.address.toHex());
-  registry.save();
-
-  let token = fetchToken(registry, event.params.id);
-  token.URI = event.params.value;
-  token.save();
+export function handleURI(event: URIEvent): void
+{
+  let contract = fetchERC1155(event.address)
+  let token    = fetchERC1155Token(contract, event.params.id)
+  token.uri    = replaceURI(event.params.value, event.params.id)
+  token.save()
 }
