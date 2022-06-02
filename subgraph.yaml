@@ -3,16 +3,17 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: OptionsSettlementEngine
+    name: OptionSettlementEngine
     network: rinkeby
     source:
       address: "0xB79DDbEc890fdE9A993e3C8C57e27629E2217AAA"
-      abi: OptionsSettlementEngine
+      abi: OptionSettlementEngine
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
+        - ApprovalForAll
         - ClaimRedeemed
         - ExerciseAssigned
         - FeeAccrued
@@ -24,13 +25,13 @@ dataSources:
         - TransferSingle
         - URI
       abis:
-        - name: OptionsSettlementEngine
-          file: ./abis/OptionsSettlementEngine.json
-        - name: IERC1155
-          file: ./abis/IERC1155.json
+        - name: OptionSettlementEngine
+          file: ./abis/OptionSettlementEngine.json
         - name: IERC1155MetadataURI
           file: ./abis/IERC1155MetadataURI.json
       eventHandlers:
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
         - event: ClaimRedeemed(indexed uint256,indexed uint256,indexed address,address,address,uint96,uint96)
           handler: handleClaimRedeemed
         - event: ExerciseAssigned(indexed uint256,indexed uint256,uint112)
