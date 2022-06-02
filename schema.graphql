@@ -13,6 +13,7 @@ type Option @entity {
 type Claim @entity {
     id: ID!
     option: BigInt
+    writer: Account!
     amountWritten: BigInt
     amountExercised: BigInt
     claimed: Boolean
