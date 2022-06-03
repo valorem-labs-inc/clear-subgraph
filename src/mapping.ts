@@ -208,7 +208,7 @@ function registerTransfer(
     ev.toBalance           = balance.id
   }
 
-  if (token.type == 1) {
+  if (token.type == 2) {
     let claim = Claim.load(id.toString());
 
     if (claim == null) {
