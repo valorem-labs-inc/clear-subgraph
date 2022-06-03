@@ -210,7 +210,6 @@ function registerTransfer(
 
   if (token.type == 2) {
     let claim = Claim.load(id.toString());
-
     if (claim == null) {
       claim = new Claim(id.toString());
       claim.save()
@@ -218,7 +217,6 @@ function registerTransfer(
 
     claim.owner = to.id;
     claim.save();
-
   }
 
   token.save()
