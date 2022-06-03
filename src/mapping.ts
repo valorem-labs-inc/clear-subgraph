@@ -97,7 +97,7 @@ export function handleNewChain(event: NewChain): void {
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.optionId);
-  token.claim = option.id;
+  token.option = option.id;
   token.type = 1;
   token.save()
 
