@@ -97,12 +97,9 @@ export function handleNewChain(event: NewChain): void {
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.optionId);
-  let engine = OptionSettlementEngine.bind(event.address);
-  let callResult = engine.try_tokenType(event.params.optionId);
-  if (!callResult.reverted) {
-    token.type = callResult.value;
-    token.save();
-  }
+  token.claim = option.id;
+  token.type = 1;
+  token.save()
 
   option.creator = fetchAccount(event.transaction.from).id;
   option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
@@ -138,17 +135,14 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   claim.option = event.params.optionId;
   claim.claimed = false;
   claim.writer = fetchAccount(event.transaction.from).id;
-  claim.owner = fetchAccount(event.transaction.from).id;
+  claim.amountWritten = event.params.amount;
   claim.save();
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
-  let engine = OptionSettlementEngine.bind(event.address);
-  let callResult = engine.try_tokenType(event.params.claimId);
-  if (!callResult.reverted) {
-    token.type = callResult.value;
-    token.save();
-  }
+  token.claim = claim.id;
+  token.type = 2;
+  token.save()
 }
 
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
@@ -206,17 +200,6 @@ function registerTransfer(
 
     ev.to                  = to.id
     ev.toBalance           = balance.id
-  }
-
-  if (token.type == 2) {
-    let claim = Claim.load(id.toString());
-    if (claim == null) {
-      claim = new Claim(id.toString());
-      claim.save()
-    }
-
-    claim.owner = to.id;
-    claim.save();
   }
 
   token.save()
