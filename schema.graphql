@@ -22,7 +22,6 @@ type Claim @entity {
     underlyingAsset: Account # address
     exerciseAmount: BigInt
     underlyingAmount: BigInt
-    owner: Account
 }
 
 type Account @entity {
@@ -45,9 +44,12 @@ type ERC1155Contract @entity(immutable: true) {
     operators: [ERC1155Operator!]! @derivedFrom(field: "contract")
     transfers: [ERC1155Transfer!]! @derivedFrom(field: "contract")
 }
+
 type ERC1155Token @entity {
     id: ID!
     type: Int
+    option: Option
+    claim: Claim
     contract: ERC1155Contract!
     identifier: BigInt!
     uri: String
@@ -55,6 +57,7 @@ type ERC1155Token @entity {
     balances: [ERC1155Balance!]! @derivedFrom(field: "token")
     transfers: [ERC1155Transfer!]! @derivedFrom(field: "token")
 }
+
 type ERC1155Balance @entity {
     id: ID!
     contract: ERC1155Contract!
