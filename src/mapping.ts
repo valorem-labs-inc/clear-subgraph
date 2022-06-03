@@ -104,6 +104,7 @@ export function handleNewChain(event: NewChain): void {
     token.save();
   }
 
+  option.creator = fetchAccount(event.transaction.from).id;
   option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
   option.exerciseTimestamp = event.params.exerciseTimestamp;
   option.expiryTimestamp = event.params.expiryTimestamp;
@@ -137,6 +138,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   claim.option = event.params.optionId;
   claim.claimed = false;
   claim.writer = fetchAccount(event.transaction.from).id;
+  claim.owner = fetchAccount(event.transaction.from).id;
   claim.save();
 
   let contract = fetchERC1155(event.address)
@@ -204,6 +206,19 @@ function registerTransfer(
 
     ev.to                  = to.id
     ev.toBalance           = balance.id
+  }
+
+  if (token.type == 2) {
+    let claim = Claim.load(id.toString());
+
+    if (claim == null) {
+      claim = new Claim(id.toString());
+      claim.save()
+    }
+
+    claim.owner = to.id;
+    claim.save();
+
   }
 
   token.save()
