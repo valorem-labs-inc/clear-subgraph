@@ -93,6 +93,7 @@ export function handleNewChain(event: NewChain): void {
 
   if (option == null) {
     option = new Option(event.params.optionId.toString());
+    option.save()
   }
 
   let contract = fetchERC1155(event.address)
@@ -117,13 +118,6 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
-  let option = Option.load(event.params.optionId.toString());
-
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-    option.save();
-  }
-
   let claim = Claim.load(event.params.claimId.toString());
 
   if (claim == null) {
