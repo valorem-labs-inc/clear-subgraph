@@ -104,6 +104,7 @@ export function handleNewChain(event: NewChain): void {
     token.save();
   }
 
+  option.creator = fetchAccount(event.transaction.from).id;
   option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
   option.exerciseTimestamp = event.params.exerciseTimestamp;
   option.expiryTimestamp = event.params.expiryTimestamp;
