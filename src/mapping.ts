@@ -93,13 +93,8 @@ export function handleNewChain(event: NewChain): void {
 
   if (option == null) {
     option = new Option(event.params.optionId.toString());
+    option.save()
   }
-
-  let contract = fetchERC1155(event.address)
-  let token = fetchERC1155Token(contract, event.params.optionId);
-  token.option = option.id;
-  token.type = 1;
-  token.save()
 
   option.creator = fetchAccount(event.transaction.from).id;
   option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
@@ -110,6 +105,12 @@ export function handleNewChain(event: NewChain): void {
   option.exerciseAmount = event.params.exerciseAmount;
 
   option.save();
+
+  let contract = fetchERC1155(event.address)
+  let token = fetchERC1155Token(contract, event.params.optionId);
+  token.option = event.params.optionId.toString();
+  token.type = 1;
+  token.save()
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
@@ -117,13 +118,6 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
-  let option = Option.load(event.params.optionId.toString());
-
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-    option.save();
-  }
-
   let claim = Claim.load(event.params.claimId.toString());
 
   if (claim == null) {
@@ -140,7 +134,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
-  token.claim = claim.id;
+  token.claim = event.params.optionId.toString();
   token.type = 2;
   token.save()
 }
