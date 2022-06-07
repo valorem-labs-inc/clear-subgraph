@@ -96,12 +96,6 @@ export function handleNewChain(event: NewChain): void {
     option.save()
   }
 
-  let contract = fetchERC1155(event.address)
-  let token = fetchERC1155Token(contract, event.params.optionId);
-  token.option = option.id;
-  token.type = 1;
-  token.save()
-
   option.creator = fetchAccount(event.transaction.from).id;
   option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
   option.exerciseTimestamp = event.params.exerciseTimestamp;
@@ -111,6 +105,12 @@ export function handleNewChain(event: NewChain): void {
   option.exerciseAmount = event.params.exerciseAmount;
 
   option.save();
+
+  let contract = fetchERC1155(event.address)
+  let token = fetchERC1155Token(contract, event.params.optionId);
+  token.option = event.params.optionId.toString();
+  token.type = 1;
+  token.save()
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
@@ -134,7 +134,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
-  token.claim = claim.id;
+  token.claim = event.params.optionId.toString();
   token.type = 2;
   token.save()
 }
