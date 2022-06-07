@@ -9,7 +9,7 @@ import {
 	ERC1155Contract,
 	ERC1155Token,
 	ERC1155Balance,
-	ERC1155Operator, Option,
+	ERC1155Operator,
 } from '../../generated/schema'
 
 import {
