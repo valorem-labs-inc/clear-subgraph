@@ -134,7 +134,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   let contract = fetchERC1155(event.address)
   let token = fetchERC1155Token(contract, event.params.claimId);
-  token.claim = event.params.optionId.toString();
+  token.claim = event.params.claimId.toString();
   token.type = 2;
   token.save()
 }
