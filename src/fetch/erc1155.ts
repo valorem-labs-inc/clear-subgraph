@@ -9,7 +9,7 @@ import {
 	ERC1155Contract,
 	ERC1155Token,
 	ERC1155Balance,
-	ERC1155Operator,
+	ERC1155Operator, Option,
 } from '../../generated/schema'
 
 import {
@@ -33,11 +33,16 @@ export function replaceURI(uri: string, identifier: BigInt): string {
 
 export function fetchERC1155(address: Address): ERC1155Contract {
 	let account        = fetchAccount(address)
-	let contract       = new ERC1155Contract(account.id)
-	contract.asAccount = account.id
-	account.asERC1155  = contract.id
-	contract.save()
-	account.save()
+	let contract = ERC1155Contract.load(account.id);
+
+	if (contract == null) {
+		contract = new ERC1155Contract(account.id);
+		contract.save()
+	}
+	contract.asAccount = account.id;
+	account.asERC1155  = contract.id;
+	contract.save();
+	account.save();
 
 	return contract
 }
