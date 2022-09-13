@@ -6,9 +6,9 @@ dataSources:
     name: OptionSettlementEngine
     network: rinkeby
     source:
-      address: "0xB79DDbEc890fdE9A993e3C8C57e27629E2217AAA"
+      address: "0xB6645D6C55Ff3511af0Cbb24009b2635ba9A23DE"
       abi: OptionSettlementEngine
-      startBlock: 10568201
+      startBlock: 10867675
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

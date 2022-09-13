@@ -64,7 +64,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   }
 
   // add data to claim
-  claim.option = event.params.optionId;
+  claim.option = event.params.optionId.toString();
   claim.claimed = true;
   claim.claimant = fetchAccount(event.params.redeemer).id;
   claim.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
@@ -126,7 +126,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   }
 
   // TODO(There should be a claim created event or something containing the required metadata)
-  claim.option = event.params.optionId;
+  claim.option = event.params.optionId.toString();
   claim.claimed = false;
   claim.writer = fetchAccount(event.transaction.from).id;
   claim.amountWritten = event.params.amount;
