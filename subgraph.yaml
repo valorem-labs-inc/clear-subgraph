@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: OptionSettlementEngine
-    network: rinkeby
+    network: goerli
     source:
-      address: "0xB6645D6C55Ff3511af0Cbb24009b2635ba9A23DE"
+      address: "0x8F4F0e14dBe9F53A54B9D8B7C18Ad5BB647b683d"
       abi: OptionSettlementEngine
-      startBlock: 10867675
+      startBlock: 7602662
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5

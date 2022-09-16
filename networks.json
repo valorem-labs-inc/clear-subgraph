@@ -1,7 +1,7 @@
 {
-  "rinkeby": {
+  "goerli": {
     "OptionsSettlementEngine": {
-      "address": "0xB6645D6C55Ff3511af0Cbb24009b2635ba9A23DE"
+      "address": "0x8F4F0e14dBe9F53A54B9D8B7C18Ad5BB647b683d"
     }
   }
 }
