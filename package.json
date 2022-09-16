@@ -4,7 +4,7 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph codegen && graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ valorem-subgraph",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ valorem-subgraph-goerli",
     "create-local": "graph create --node http://localhost:8020/ valorem-subgraph",
     "remove-local": "graph remove --node http://localhost:8020/ valorem-subgraph",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 valorem-subgraph"
