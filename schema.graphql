@@ -36,13 +36,14 @@ type Account @entity {
     events: [Event!]! @derivedFrom(field: "emitter")
 }
 
-type ERC1155Contract @entity(immutable: true) {
+type ERC1155Contract @entity {
     id: ID!
     asAccount: Account!
     tokens: [ERC1155Token!]! @derivedFrom(field: "contract")
     balances: [ERC1155Balance!]! @derivedFrom(field: "contract")
     operators: [ERC1155Operator!]! @derivedFrom(field: "contract")
     transfers: [ERC1155Transfer!]! @derivedFrom(field: "contract")
+    totalValueLockedUSD: BigDecimal!
 }
 
 type ERC1155Token @entity {
@@ -68,6 +69,7 @@ type ERC1155Balance @entity {
     transferFromEvent: [ERC1155Transfer!]! @derivedFrom(field: "fromBalance")
     transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "toBalance")
 }
+
 type ERC1155Operator @entity {
     id: ID!
     contract: ERC1155Contract!
@@ -75,6 +77,7 @@ type ERC1155Operator @entity {
     operator: Account!
     approved: Boolean!
 }
+
 type ERC1155Transfer implements Event @entity(immutable: true) {
     id: ID!
     emitter: Account!
@@ -90,6 +93,7 @@ type ERC1155Transfer implements Event @entity(immutable: true) {
     value: BigDecimal!
     valueExact: BigInt!
 }
+
 interface Event {
     id: ID!
     transaction: Transaction!
@@ -108,4 +112,13 @@ type DecimalValue @entity {
     value: BigDecimal!
     exact: BigInt!
     decimals: Int!
+}
+
+type ValoremDayData @entity {
+  # timestamp rounded to current day by dividing by 86400
+  id: ID!
+  # timestamp rounded to current day by dividing by 86400
+  date: Int! 
+  # tvl in USD terms
+  totalValueLockedUSD: BigDecimal!
 }

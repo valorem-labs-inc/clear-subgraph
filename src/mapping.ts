@@ -1,6 +1,6 @@
 import {
   ethereum,
-  BigInt, Address,
+  BigInt, Address, log,
 } from '@graphprotocol/graph-ts'
 
 import {
@@ -24,6 +24,7 @@ import {
   URI as URIEvent
 } from "../generated/OptionSettlementEngine/OptionSettlementEngine"
 import { Option, Claim } from "../generated/schema"
+import { UniswapV3Factory } from "../generated/OptionSettlementEngine/UniswapV3Factory";
 
 import {
   constants
@@ -52,6 +53,10 @@ import {
   fetchERC721Operator,
   replaceURI,
 } from './fetch/erc1155'
+import { exponentToBigDecimal, getTokenPriceUSD } from './utils/price';
+import { ZERO_ADDRESS } from './utils/constants';
+import { ERC20 } from '../generated/OptionSettlementEngine/ERC20';
+import { updateValoremDayData } from './utils';
 
 // TODO(Implement these)
 
@@ -73,6 +78,39 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   claim.underlyingAmount = event.params.underlyingAmount;
 
   claim.save();
+
+  let exerciseAsset = claim.exerciseAsset as string;
+  let exercisePriceUSD = getTokenPriceUSD(exerciseAsset);
+  let exerciseAmount = event.params.exerciseAmount
+    .toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(ERC20.bind(Address.fromString(exerciseAsset)).decimals())
+      )
+    );
+  let exerciseValueUSD = exercisePriceUSD.times(exerciseAmount);
+
+  let underlyingAsset = claim.underlyingAsset as string;
+  let underlyingPriceUSD = getTokenPriceUSD(underlyingAsset);
+  let underlyingAmount = event.params.underlyingAmount
+    .toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(
+          ERC20.bind(Address.fromString(underlyingAsset)).decimals()
+        )
+      )
+    );
+
+  let underlyingValueUSD = underlyingPriceUSD.times(underlyingAmount);
+
+  let contract = fetchERC1155(event.address);
+
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.minus(exerciseValueUSD).minus(underlyingValueUSD);
+
+  contract.save();
+
+  updateValoremDayData(event);
 }
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {
@@ -114,7 +152,44 @@ export function handleNewChain(event: NewChain): void {
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
+  let option = Option.load(event.params.optionId.toString());
 
+  if (option === null) {
+    option = new Option(event.params.optionId.toString());
+  }
+
+  let exerciseAsset = option.exerciseAsset as string;
+  let exercisePriceUSD = getTokenPriceUSD(exerciseAsset);
+  let exerciseAmount = (option.exerciseAmount as BigInt)
+    .toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(ERC20.bind(Address.fromString(exerciseAsset)).decimals())
+      )
+    );
+  let exerciseValueUSD = exercisePriceUSD.times(exerciseAmount).times(event.params.amount.toBigDecimal());
+
+  let underlyingAsset = option.underlyingAsset as string;
+  let underlyingPriceUSD = getTokenPriceUSD(underlyingAsset);
+  let underlyingAmount = (option.underlyingAmount as BigInt)
+    .toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(
+          ERC20.bind(Address.fromString(underlyingAsset)).decimals()
+        )
+      )
+    );
+
+  let underlyingValueUSD = underlyingPriceUSD.times(underlyingAmount).times(event.params.amount.toBigDecimal());
+
+  let contract = fetchERC1155(event.address);
+
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(exerciseValueUSD).minus(underlyingValueUSD);
+
+  contract.save();
+
+  updateValoremDayData(event);
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
@@ -136,7 +211,26 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   let token = fetchERC1155Token(contract, event.params.claimId);
   token.claim = event.params.claimId.toString();
   token.type = 2;
-  token.save()
+  token.save();
+
+  let option = Option.load(event.params.optionId.toString())
+  if (option == null) {
+    option = new Option(event.params.optionId.toString());
+    option.save()
+  }
+
+  const underlyingAsset = option.underlyingAsset ? option.underlyingAsset : ZERO_ADDRESS;
+
+  const underlyingPriceUSD = getTokenPriceUSD(underlyingAsset as string);
+
+  const underlyingAmount = (option.underlyingAmount as BigInt).toBigDecimal().div(exponentToBigDecimal(BigInt.fromI64(ERC20.bind(Address.fromString(underlyingAsset as string)).decimals())))
+
+  const underlyingValueUSD = underlyingPriceUSD.times(underlyingAmount).times(event.params.amount.toBigDecimal());
+  
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(underlyingValueUSD);
+  contract.save();
+
+  updateValoremDayData(event);
 }
 
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs

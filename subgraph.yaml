@@ -30,6 +30,12 @@ dataSources:
           file: ./abis/OptionSettlementEngine.json
         - name: IERC1155MetadataURI
           file: ./abis/IERC1155MetadataURI.json
+        - name: UniswapV3Factory
+          file: ./abis/UniswapV3Factory.json
+        - name: UniswapV3Pool
+          file: ./abis/UniswapV3Pool.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
