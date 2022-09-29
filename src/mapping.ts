@@ -79,6 +79,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   claim.save();
 
+  // retrieve value of exercise assets being transfered
   let exerciseAsset = claim.exerciseAsset as string;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAsset);
   let exerciseAmount = event.params.exerciseAmount
@@ -90,6 +91,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
     );
   let exerciseValueUSD = exercisePriceUSD.times(exerciseAmount);
 
+  // retrieve value of underlying assets being transfered
   let underlyingAsset = claim.underlyingAsset as string;
   let underlyingPriceUSD = getTokenPriceUSD(underlyingAsset);
   let underlyingAmount = event.params.underlyingAmount
@@ -106,6 +108,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   let contract = fetchERC1155(event.address);
 
+  // Update TVL to reflect the value of the exercise and underlying tokens being transfered out.
   contract.totalValueLockedUSD = contract.totalValueLockedUSD.minus(exerciseValueUSD).minus(underlyingValueUSD);
 
   contract.save();
@@ -191,6 +194,8 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 
   let contract = fetchERC1155(event.address);
 
+  // Update TVL to reflect the value of the exercise tokens being transfered in
+  // and underlying tokens being transfered out
   contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(exerciseValueUSD).minus(underlyingValueUSD);
 
   contract.save();
@@ -237,6 +242,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   const underlyingValueUSD = underlyingPriceUSD.times(underlyingAmount).times(event.params.amount.toBigDecimal());
   
+  // Update TVL to reflect the value of underlying tokens being transfered in.
   contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(underlyingValueUSD);
   contract.save();
 

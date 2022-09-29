@@ -2,6 +2,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";
 import { UniswapV3Pool } from "../../generated/OptionSettlementEngine/UniswapV3Pool";
 import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
+import { ZERO_ADDRESS } from "./constants";
 
 const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6";
 
@@ -20,41 +21,8 @@ const TOKEN_WHITELIST = [
   "0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05", // WBTC
 ];
 
-export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
-  let bd = BigDecimal.fromString("1");
-  for (
-    let i = BigInt.fromString("0");
-    i.lt(decimals as BigInt);
-    i = i.plus(BigInt.fromString("1"))
-  ) {
-    bd = bd.times(BigDecimal.fromString("10"));
-  }
-  return bd;
-}
-
-export function sqrtPriceX96ToTokenPrices(
-  sqrtPriceX96: BigInt,
-  token0: ERC20,
-  token1: ERC20
-): BigDecimal[] {
-  let num = sqrtPriceX96.times(sqrtPriceX96).toBigDecimal();
-  let denom = BigDecimal.fromString(
-    "6277101735386680763835789423207666416102355444464034512896"
-  );
-
-  let price1 = num
-    .div(denom)
-    .times(exponentToBigDecimal(BigInt.fromI64(token0.decimals())))
-    .div(exponentToBigDecimal(BigInt.fromI64(token1.decimals())));
-
-  let price0 = safeDiv(BigDecimal.fromString("1"), price1);
-
-  return [price0, price1];
-}
-
+// Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
-  // fetch eth prices for each stablecoin
-  // 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -90,6 +58,9 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
   return derivedEth.times(ethPriceUSD);
 }
 
+// Derives token price in ETH terms by using either the token / WETH pool,
+// or a whitelisted tokens WETH pool.
+// Credit: https://github.com/Uniswap/v3-subgraph/blob/main/src/utils/pricing.ts#L74
 export function findEthPerToken(tokenAddress: string): BigDecimal {
   const uniswapFactory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
@@ -99,8 +70,6 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
     return BigDecimal.fromString("1");
   }
 
-  let largestLiquidityETH = BigDecimal.fromString("0");
-
   for (let i = 0; i < TOKEN_WHITELIST.length; i++) {
     const poolAddress = uniswapFactory.getPool(
       Address.fromString(tokenAddress),
@@ -108,11 +77,7 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
       3000
     );
 
-    // log.info("pool address = {}", [poolAddress.toHexString()]);
-
-    if (
-      poolAddress.toHexString() != "0x0000000000000000000000000000000000000000"
-    ) {
+    if (poolAddress.toHexString() != ZERO_ADDRESS) {
       let pool = UniswapV3Pool.bind(poolAddress);
       let token0Address = pool.token0();
       let token1Address = pool.token1();
@@ -124,6 +89,7 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
         ) {
           // whitelist token is token1
           let token1 = ERC20.bind(pool.token1());
+
           // get the derived ETH in pool
           let token1DerivedEth = findEthPerToken(pool.token1().toHexString());
 
@@ -132,11 +98,7 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
             .toBigDecimal()
             .times(token1DerivedEth);
 
-          if (
-            ethLocked.gt(largestLiquidityETH) &&
-            ethLocked.gt(MINIMUM_ETH_LOCKED)
-          ) {
-            largestLiquidityETH = ethLocked;
+          if (ethLocked.gt(MINIMUM_ETH_LOCKED)) {
             const tokenPrices = sqrtPriceX96ToTokenPrices(
               pool.slot0().value0,
               ERC20.bind(pool.token0()),
@@ -161,11 +123,7 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
             .toBigDecimal()
             .times(token0DerivedEth);
 
-          if (
-            ethLocked.gt(largestLiquidityETH) &&
-            ethLocked.gt(MINIMUM_ETH_LOCKED)
-          ) {
-            largestLiquidityETH = ethLocked;
+          if (ethLocked.gt(MINIMUM_ETH_LOCKED)) {
             const tokenPrices = sqrtPriceX96ToTokenPrices(
               pool.slot0().value0,
               token0,
@@ -189,4 +147,36 @@ export function safeDiv(amount0: BigDecimal, amount1: BigDecimal): BigDecimal {
   } else {
     return amount0.div(amount1);
   }
+}
+
+export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
+  let bd = BigDecimal.fromString("1");
+  for (
+    let i = BigInt.fromString("0");
+    i.lt(decimals as BigInt);
+    i = i.plus(BigInt.fromString("1"))
+  ) {
+    bd = bd.times(BigDecimal.fromString("10"));
+  }
+  return bd;
+}
+
+export function sqrtPriceX96ToTokenPrices(
+  sqrtPriceX96: BigInt,
+  token0: ERC20,
+  token1: ERC20
+): BigDecimal[] {
+  let num = sqrtPriceX96.times(sqrtPriceX96).toBigDecimal();
+  let denom = BigDecimal.fromString(
+    "6277101735386680763835789423207666416102355444464034512896"
+  );
+
+  let price1 = num
+    .div(denom)
+    .times(exponentToBigDecimal(BigInt.fromI64(token0.decimals())))
+    .div(exponentToBigDecimal(BigInt.fromI64(token1.decimals())));
+
+  let price0 = safeDiv(BigDecimal.fromString("1"), price1);
+
+  return [price0, price1];
 }

@@ -1,6 +1,8 @@
 import { BigDecimal, ethereum } from "@graphprotocol/graph-ts";
 import { ERC1155Contract, ValoremDayData } from "../../generated/schema";
 
+// Retrieves or creates a daily data entity for tracking Volume and TVL.
+// Code adapted from https://github.com/Uniswap/v3-subgraph/blob/bf03f940f17c3d32ee58bd37386f26713cff21e2/src/utils/intervalUpdates.ts#L23
 export function updateValoremDayData(event: ethereum.Event): ValoremDayData {
   let valorem = ERC1155Contract.load(
     event.address.toHexString()
