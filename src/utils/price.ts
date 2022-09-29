@@ -1,4 +1,4 @@
-import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";
 import { UniswapV3Pool } from "../../generated/OptionSettlementEngine/UniswapV3Pool";
 import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
@@ -19,15 +19,6 @@ const TOKEN_WHITELIST = [
   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI
   "0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05", // WBTC
 ];
-
-// return 0 if denominator is 0 in division
-export function safeDiv(amount0: BigDecimal, amount1: BigDecimal): BigDecimal {
-  if (amount1.equals(BigDecimal.zero())) {
-    return BigDecimal.zero();
-  } else {
-    return amount0.div(amount1);
-  }
-}
 
 export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
   let bd = BigDecimal.fromString("1");
@@ -95,8 +86,6 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
   const ethPriceUSD = getEthPriceInUSD();
 
   const derivedEth = findEthPerToken(tokenAddress);
-
-  log.info("{} derived eth = {}", [tokenAddress, derivedEth.toString()]);
 
   return derivedEth.times(ethPriceUSD);
 }
@@ -191,4 +180,13 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
   }
 
   return BigDecimal.zero();
+}
+
+// return 0 if denominator is 0 in division
+export function safeDiv(amount0: BigDecimal, amount1: BigDecimal): BigDecimal {
+  if (amount1.equals(BigDecimal.zero())) {
+    return BigDecimal.zero();
+  } else {
+    return amount0.div(amount1);
+  }
 }

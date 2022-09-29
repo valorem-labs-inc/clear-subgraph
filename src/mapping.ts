@@ -1,6 +1,6 @@
 import {
   ethereum,
-  BigInt, Address, log,
+  BigInt, Address
 } from '@graphprotocol/graph-ts'
 
 import {
@@ -111,6 +111,12 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   contract.save();
 
   updateValoremDayData(event);
+
+  let dayData = updateValoremDayData(event);
+
+  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
+
+  dayData.save();
 }
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {
@@ -189,7 +195,11 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 
   contract.save();
 
-  updateValoremDayData(event);
+  let dayData = updateValoremDayData(event);
+
+  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
+
+  dayData.save();
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
@@ -231,6 +241,12 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   contract.save();
 
   updateValoremDayData(event);
+
+  let dayData = updateValoremDayData(event);
+
+  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
+
+  dayData.save();
 }
 
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs

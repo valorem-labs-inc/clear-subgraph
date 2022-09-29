@@ -121,4 +121,6 @@ type ValoremDayData @entity {
   date: Int! 
   # tvl in USD terms
   totalValueLockedUSD: BigDecimal!
+  # volume in USD terms
+  volumeUSD: BigDecimal!
 }
