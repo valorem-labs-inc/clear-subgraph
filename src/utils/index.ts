@@ -20,6 +20,8 @@ export function updateValoremDayData(event: ethereum.Event): ValoremDayData {
     valoremDayData.date = dayStartTimestamp;
     valoremDayData.totalValueLockedUSD = BigDecimal.zero();
     valoremDayData.volumeUSD = BigDecimal.zero();
+    valoremDayData.feesAccrued = BigDecimal.zero();
+    valoremDayData.feesSwept = BigDecimal.zero();
   }
 
   valoremDayData.totalValueLockedUSD = valorem.totalValueLockedUSD;

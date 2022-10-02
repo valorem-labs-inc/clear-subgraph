@@ -124,4 +124,8 @@ type ValoremDayData @entity {
   totalValueLockedUSD: BigDecimal!
   # volume in USD terms
   volumeUSD: BigDecimal!
+  # fees accrued in USD terms
+  feesAccrued: BigDecimal!
+  # fees swept in USD terms
+  feesSwept: BigDecimal!
 }

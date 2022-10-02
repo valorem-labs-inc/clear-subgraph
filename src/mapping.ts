@@ -109,9 +109,37 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
 export function handleExerciseAssigned(event: ExerciseAssigned): void {}
 
-export function handleFeeAccrued(event: FeeAccrued): void {}
+export function handleFeeAccrued(event: FeeAccrued): void {
+  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
+  let formattedAmount = event.params.amount
+    .toBigDecimal()
+    .div(exponentToBigDecimal(assetDecimals));
 
-export function handleFeeSwept(event: FeeSwept): void {}
+  let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
+  let feeValueUSD = assetPrice.times(formattedAmount);
+
+  let dayData = updateValoremDayData(event);
+
+  dayData.feesAccrued = dayData.feesAccrued.plus(feeValueUSD);
+
+  dayData.save();
+}
+
+export function handleFeeSwept(event: FeeSwept): void {
+  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.token).decimals());
+  let formattedAmount = event.params.amount
+    .toBigDecimal()
+    .div(exponentToBigDecimal(assetDecimals));
+
+  let assetPrice = getTokenPriceUSD(event.params.token.toHexString());
+  let feeValueUSD = assetPrice.times(formattedAmount);
+
+  let dayData = updateValoremDayData(event);
+
+  dayData.feesSwept = dayData.feesSwept.plus(feeValueUSD);
+
+  dayData.save();
+}
 
 export function handleNewChain(event: NewChain): void {
   let option = Option.load(event.params.optionId.toString());
