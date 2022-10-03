@@ -129,3 +129,29 @@ type ValoremDayData @entity {
   # fees swept in USD terms
   feesSwept: BigDecimal!
 }
+
+type Token @entity {
+  id: ID!
+  symbol: String!
+  name: String!
+  decimals: BigInt!
+  totalValueLocked: BigDecimal!
+  totalValueLockedUSD: BigDecimal!
+}
+
+type TokenDayData @entity {
+  # token address concatendated with date
+  id: ID!
+  # timestamp rounded to current day by dividing by 86400
+  date: Int!
+  # pointer to token
+  token: Token!
+  # tvl across all contracts in token units
+  totalValueLocked: BigDecimal!
+  # tvl across all contracts in usd
+  totalValueLockedUSD: BigDecimal!
+  # token volume in token units
+  volume: BigDecimal!
+  # token volume in usd
+  volumeUSD: BigDecimal!
+}
