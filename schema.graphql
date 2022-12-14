@@ -155,3 +155,11 @@ type TokenDayData @entity {
   # token volume in usd
   volumeUSD: BigDecimal!
 }
+
+type FeeSwitch @entity {
+  # OptionSettlementEngine contract address
+  id: ID!
+  # recipient of fees
+  feeToAddress: String!
+  isEnabled: Boolean!
+}
