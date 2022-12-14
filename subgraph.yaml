@@ -45,6 +45,10 @@ dataSources:
           handler: handleFeeAccrued
         - event: FeeSwept(indexed address,indexed address,uint256)
           handler: handleFeeSwept
+        - event: FeeSwitchUpdated(address,bool)
+          handler: handleFeeSwitchUpdated
+        - event: FeeToUpdated(indexed address)
+          handler: handleFeeToUpdated
         - event: NewOptionType(uint256,indexed address,indexed address,uint96,uint96,uint40,indexed uint40)
           handler: handleNewOptionType
         - event: OptionsExercised(indexed uint256,indexed address,uint112)

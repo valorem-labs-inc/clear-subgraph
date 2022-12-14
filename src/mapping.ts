@@ -19,6 +19,8 @@ import {
   TransferBatch as TransferBatchEvent,
   TransferSingle as TransferSingleEvent,
   URI as URIEvent,
+  FeeToUpdated,
+  FeeSwitchUpdated,
 } from "../generated/OptionSettlementEngine/OptionSettlementEngine";
 import { Option, Claim } from "../generated/schema";
 
@@ -138,7 +140,26 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   dayData.save();
 }
 
+export function handleFeeSwitchUpdated(event: FeeSwitchUpdated): void {
+  let isEnabled = event.params.enabled;
+  let feeTo = event.params.feeTo;
 
+  // create new entity?
+  // let ValoremProtocol = {
+  //   feeToAddress: Address!
+  //   isEnabled: boolean!
+  // }
+}
+
+export function handleFeeToUpdated(event: FeeToUpdated): void {
+  let newFeeTo = event.params.newFeeTo;
+
+  // create new entity?
+  // let ValoremProtocol  = {
+  //   feeToAddress: Address!
+  //   isEnabled: boolean!
+  // }
+}
 
 export function handleFeeAccrued(event: FeeAccrued): void {
   let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
