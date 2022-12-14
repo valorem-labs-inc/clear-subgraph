@@ -11,7 +11,6 @@ import {
   OptionSettlementEngine,
   ApprovalForAll as ApprovalForAllEvent,
   ClaimRedeemed,
-  ExerciseAssigned,
   FeeAccrued,
   FeeSwept,
   NewOptionType,
@@ -141,7 +140,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   dayData.save();
 }
 
-export function handleExerciseAssigned(event: ExerciseAssigned): void {}
+
 
 export function handleFeeAccrued(event: FeeAccrued): void {
   let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
