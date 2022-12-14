@@ -1,17 +1,63 @@
 [
   {
     "inputs": [
+      { "internalType": "address", "name": "_feeTo", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_tokenURIGenerator",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
       { "internalType": "address", "name": "accessor", "type": "address" },
       { "internalType": "address", "name": "permissioned", "type": "address" }
     ],
     "name": "AccessControlViolation",
     "type": "error"
   },
-  { "inputs": [], "name": "AlreadyClaimed", "type": "error" },
-  { "inputs": [], "name": "BalanceTooLow", "type": "error" },
-  { "inputs": [], "name": "ClaimTooSoon", "type": "error" },
-  { "inputs": [], "name": "ExerciseTooEarly", "type": "error" },
-  { "inputs": [], "name": "ExerciseWindowTooShort", "type": "error" },
+  { "inputs": [], "name": "AmountWrittenCannotBeZero", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "claimId", "type": "uint256" }
+    ],
+    "name": "CallerDoesNotOwnClaimId",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "optionId", "type": "uint256" },
+      { "internalType": "uint112", "name": "amount", "type": "uint112" }
+    ],
+    "name": "CallerHoldsInsufficientOptions",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "claimId", "type": "uint256" },
+      { "internalType": "uint40", "name": "expiry", "type": "uint40" }
+    ],
+    "name": "ClaimTooSoon",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "optionId", "type": "uint256" },
+      { "internalType": "uint40", "name": "exercise", "type": "uint40" }
+    ],
+    "name": "ExerciseTooEarly",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint40", "name": "exercise", "type": "uint40" }
+    ],
+    "name": "ExerciseWindowTooShort",
+    "type": "error"
+  },
   {
     "inputs": [
       { "internalType": "uint256", "name": "optionId", "type": "uint256" },
@@ -20,7 +66,20 @@
     "name": "ExpiredOption",
     "type": "error"
   },
-  { "inputs": [], "name": "ExpiryTooSoon", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint40", "name": "expiry", "type": "uint40" }
+    ],
+    "name": "ExpiryWindowTooShort",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "input", "type": "address" }
+    ],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
   {
     "inputs": [
       { "internalType": "address", "name": "asset1", "type": "address" },
@@ -43,12 +102,11 @@
     "name": "InvalidOption",
     "type": "error"
   },
-  { "inputs": [], "name": "NoClaims", "type": "error" },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "hash", "type": "bytes32" }
+      { "internalType": "uint256", "name": "optionId", "type": "uint256" }
     ],
-    "name": "OptionsChainExists",
+    "name": "OptionsTypeExists",
     "type": "error"
   },
   {
@@ -106,27 +164,15 @@
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "exerciseAsset",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "exerciseAmountRedeemed",
+        "type": "uint256"
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "underlyingAsset",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint96",
-        "name": "exerciseAmount",
-        "type": "uint96"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint96",
-        "name": "underlyingAmount",
-        "type": "uint96"
+        "internalType": "uint256",
+        "name": "underlyingAmountRedeemed",
+        "type": "uint256"
       }
     ],
     "name": "ClaimRedeemed",
@@ -138,28 +184,9 @@
       {
         "indexed": true,
         "internalType": "uint256",
-        "name": "claimId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
         "name": "optionId",
         "type": "uint256"
       },
-      {
-        "indexed": false,
-        "internalType": "uint112",
-        "name": "amountAssigned",
-        "type": "uint112"
-      }
-    ],
-    "name": "ExerciseAssigned",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
       {
         "indexed": true,
         "internalType": "address",
@@ -169,7 +196,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "payor",
+        "name": "payer",
         "type": "address"
       },
       {
@@ -188,7 +215,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "token",
+        "name": "asset",
         "type": "address"
       },
       {
@@ -211,7 +238,39 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "feeTo",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      }
+    ],
+    "name": "FeeSwitchUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
+        "internalType": "address",
+        "name": "newFeeTo",
+        "type": "address"
+      }
+    ],
+    "name": "FeeToUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint256",
         "name": "optionId",
         "type": "uint256"
@@ -247,13 +306,13 @@
         "type": "uint40"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint40",
         "name": "expiryTimestamp",
         "type": "uint40"
       }
     ],
-    "name": "NewChain",
+    "name": "NewOptionType",
     "type": "event"
   },
   {
@@ -268,7 +327,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "exercisee",
+        "name": "exerciser",
         "type": "address"
       },
       {
@@ -297,7 +356,7 @@
         "type": "address"
       },
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256",
         "name": "claimId",
         "type": "uint256"
@@ -310,6 +369,19 @@
       }
     ],
     "name": "OptionsWritten",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newTokenURIGenerator",
+        "type": "address"
+      }
+    ],
+    "name": "TokenURIGeneratorUpdated",
     "type": "event"
   },
   {
@@ -429,24 +501,24 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+      { "internalType": "uint256", "name": "claimId", "type": "uint256" }
     ],
     "name": "claim",
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "option", "type": "uint256" },
           {
-            "internalType": "uint112",
+            "internalType": "uint256",
             "name": "amountWritten",
-            "type": "uint112"
+            "type": "uint256"
           },
           {
-            "internalType": "uint112",
+            "internalType": "uint256",
             "name": "amountExercised",
-            "type": "uint112"
+            "type": "uint256"
           },
-          { "internalType": "bool", "name": "claimed", "type": "bool" }
+          { "internalType": "uint256", "name": "optionId", "type": "uint256" },
+          { "internalType": "bool", "name": "unredeemed", "type": "bool" }
         ],
         "internalType": "struct IOptionSettlementEngine.Claim",
         "name": "claimInfo",
@@ -488,9 +560,9 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
-    "name": "hashToOptionToken",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "inputs": [],
+    "name": "feesEnabled",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -507,49 +579,25 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "underlyingAsset",
-            "type": "address"
-          },
-          {
-            "internalType": "uint40",
-            "name": "exerciseTimestamp",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint40",
-            "name": "expiryTimestamp",
-            "type": "uint40"
-          },
-          {
-            "internalType": "address",
-            "name": "exerciseAsset",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "underlyingAmount",
-            "type": "uint96"
-          },
-          {
-            "internalType": "uint160",
-            "name": "settlementSeed",
-            "type": "uint160"
-          },
-          {
-            "internalType": "uint96",
-            "name": "exerciseAmount",
-            "type": "uint96"
-          }
-        ],
-        "internalType": "struct IOptionSettlementEngine.Option",
-        "name": "optionInfo",
-        "type": "tuple"
-      }
+        "internalType": "address",
+        "name": "underlyingAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "uint96",
+        "name": "underlyingAmount",
+        "type": "uint96"
+      },
+      { "internalType": "address", "name": "exerciseAsset", "type": "address" },
+      { "internalType": "uint96", "name": "exerciseAmount", "type": "uint96" },
+      {
+        "internalType": "uint40",
+        "name": "exerciseTimestamp",
+        "type": "uint40"
+      },
+      { "internalType": "uint40", "name": "expiryTimestamp", "type": "uint40" }
     ],
-    "name": "newChain",
+    "name": "newOptionType",
     "outputs": [
       { "internalType": "uint256", "name": "optionId", "type": "uint256" }
     ],
@@ -570,6 +618,21 @@
             "type": "address"
           },
           {
+            "internalType": "uint96",
+            "name": "underlyingAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "exerciseAmount",
+            "type": "uint96"
+          },
+          {
             "internalType": "uint40",
             "name": "exerciseTimestamp",
             "type": "uint40"
@@ -580,25 +643,11 @@
             "type": "uint40"
           },
           {
-            "internalType": "address",
-            "name": "exerciseAsset",
-            "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "underlyingAmount",
-            "type": "uint96"
-          },
-          {
             "internalType": "uint160",
             "name": "settlementSeed",
             "type": "uint160"
           },
-          {
-            "internalType": "uint96",
-            "name": "exerciseAmount",
-            "type": "uint96"
-          }
+          { "internalType": "uint96", "name": "nextClaimKey", "type": "uint96" }
         ],
         "internalType": "struct IOptionSettlementEngine.Option",
         "name": "optionInfo",
@@ -663,6 +712,26 @@
     "type": "function"
   },
   {
+    "inputs": [{ "internalType": "bool", "name": "enabled", "type": "bool" }],
+    "name": "setFeesEnabled",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newTokenURIGenerator",
+        "type": "address"
+      }
+    ],
+    "name": "setTokenURIGenerator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
     ],
@@ -681,13 +750,28 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
     "name": "tokenType",
     "outputs": [
       {
-        "internalType": "enum IOptionSettlementEngine.Type",
-        "name": "",
+        "internalType": "enum IOptionSettlementEngine.TokenType",
+        "name": "typeOfToken",
         "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenURIGenerator",
+    "outputs": [
+      {
+        "internalType": "contract ITokenURIGenerator",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -723,7 +807,7 @@
           }
         ],
         "internalType": "struct IOptionSettlementEngine.Underlying",
-        "name": "underlyingPositions",
+        "name": "underlyingPosition",
         "type": "tuple"
       }
     ],
@@ -741,13 +825,11 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "optionId", "type": "uint256" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
       { "internalType": "uint112", "name": "amount", "type": "uint112" }
     ],
     "name": "write",
-    "outputs": [
-      { "internalType": "uint256", "name": "claimId", "type": "uint256" }
-    ],
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "nonpayable",
     "type": "function"
   }
