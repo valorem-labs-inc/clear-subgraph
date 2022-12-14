@@ -1,7 +1,10 @@
 {
   "goerli": {
     "OptionsSettlementEngine": {
-      "address": "0x8F4F0e14dBe9F53A54B9D8B7C18Ad5BB647b683d"
+      "address": "0x31274a640ffDE3e3fAD51eFA083DBb3f6b875ea6"
+    },
+    "TokenURIGenerator": {
+      "address": "0x3595424AF748E0bc1D7f1AeE5ed200E8C2AE3b73"
     }
   }
 }
