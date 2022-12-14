@@ -1,5 +1,10 @@
-import { BigDecimal, ethereum } from "@graphprotocol/graph-ts";
-import { ERC1155Contract, ValoremDayData } from "../../generated/schema";
+import { Address, BigDecimal, ethereum } from "@graphprotocol/graph-ts";
+import {
+  ERC1155Contract,
+  FeeSwitch,
+  ValoremDayData,
+} from "../../generated/schema";
+import { OptionSettlementEngine } from "../../generated/OptionSettlementEngine/OptionSettlementEngine";
 
 export * from "./tokens";
 
@@ -31,4 +36,22 @@ export function updateValoremDayData(event: ethereum.Event): ValoremDayData {
   valoremDayData.save();
 
   return valoremDayData;
+}
+
+export function loadOrInitializeFeeSwitch(contractAddress: string): FeeSwitch {
+  let feeSwitch = FeeSwitch.load(contractAddress);
+
+  if (feeSwitch === null) {
+    let optionSettlementEngine = OptionSettlementEngine.bind(
+      Address.fromString(contractAddress)
+    );
+    let initialFeeToAddress = optionSettlementEngine.feeTo().toHexString();
+
+    feeSwitch = new FeeSwitch(contractAddress);
+    feeSwitch.feeToAddress = initialFeeToAddress;
+    feeSwitch.isEnabled = false;
+    feeSwitch.save();
+  }
+
+  return feeSwitch;
 }
