@@ -46,6 +46,7 @@ import { ZERO_ADDRESS } from "./utils/constants";
 import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
 import {
   initializeToken,
+  loadOrInitializeFeeSwitch,
   loadOrInitializeToken,
   updateTokenDayData,
   updateValoremDayData,
@@ -142,23 +143,20 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
 export function handleFeeSwitchUpdated(event: FeeSwitchUpdated): void {
   let isEnabled = event.params.enabled;
-  let feeTo = event.params.feeTo;
+  let feeTo = event.params.feeTo.toHexString();
 
-  // create new entity?
-  // let ValoremProtocol = {
-  //   feeToAddress: Address!
-  //   isEnabled: boolean!
-  // }
+  let feeSwitch = loadOrInitializeFeeSwitch(event.address.toHexString());
+  feeSwitch.isEnabled = isEnabled;
+  feeSwitch.feeToAddress = feeTo;
+  feeSwitch.save();
 }
 
 export function handleFeeToUpdated(event: FeeToUpdated): void {
-  let newFeeTo = event.params.newFeeTo;
+  let newFeeTo = event.params.newFeeTo.toHexString();
 
-  // create new entity?
-  // let ValoremProtocol  = {
-  //   feeToAddress: Address!
-  //   isEnabled: boolean!
-  // }
+  let feeSwitch = loadOrInitializeFeeSwitch(event.address.toHexString());
+  feeSwitch.feeToAddress = newFeeTo;
+  feeSwitch.save();
 }
 
 export function handleFeeAccrued(event: FeeAccrued): void {
