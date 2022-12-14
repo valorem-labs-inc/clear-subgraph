@@ -159,12 +159,12 @@ export function handleFeeAccrued(event: FeeAccrued): void {
 }
 
 export function handleFeeSwept(event: FeeSwept): void {
-  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.token).decimals());
+  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
   let formattedAmount = event.params.amount
     .toBigDecimal()
     .div(exponentToBigDecimal(assetDecimals));
 
-  let assetPrice = getTokenPriceUSD(event.params.token.toHexString());
+  let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
   let dayData = updateValoremDayData(event);
