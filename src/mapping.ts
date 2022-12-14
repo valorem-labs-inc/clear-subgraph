@@ -63,17 +63,15 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   claim.option = event.params.optionId.toString();
   claim.claimed = true;
   claim.claimant = fetchAccount(event.params.redeemer).id;
-  claim.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
-  claim.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
-  claim.exerciseAmount = event.params.exerciseAmount;
-  claim.underlyingAmount = event.params.underlyingAmount;
+  claim.exerciseAmount = event.params.exerciseAmountRedeemed;
+  claim.underlyingAmount = event.params.underlyingAmountRedeemed;
 
   claim.save();
 
   // retrieve value of exercise assets being transfered
   let exerciseAssetAddress = claim.exerciseAsset as string;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
-  let exerciseAmount = event.params.exerciseAmount
+  let exerciseAmount = event.params.exerciseAmountRedeemed
     .toBigDecimal()
     .div(
       exponentToBigDecimal(
@@ -87,7 +85,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   // retrieve value of underlying assets being transfered
   let underlyingAssetAddress = claim.underlyingAsset as string;
   let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
-  let underlyingAmount = event.params.underlyingAmount
+  let underlyingAmount = event.params.underlyingAmountRedeemed
     .toBigDecimal()
     .div(
       exponentToBigDecimal(
