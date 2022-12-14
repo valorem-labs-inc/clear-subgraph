@@ -14,7 +14,7 @@ import {
   ExerciseAssigned,
   FeeAccrued,
   FeeSwept,
-  NewChain,
+  NewOptionType,
   OptionsExercised,
   OptionsWritten,
   TransferBatch as TransferBatchEvent,
@@ -175,7 +175,7 @@ export function handleFeeSwept(event: FeeSwept): void {
   dayData.save();
 }
 
-export function handleNewChain(event: NewChain): void {
+export function handleNewOptionType(event: NewOptionType): void {
   let option = Option.load(event.params.optionId.toString());
 
   if (option == null) {
