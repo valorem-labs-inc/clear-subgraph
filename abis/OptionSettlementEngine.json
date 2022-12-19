@@ -659,6 +659,43 @@
   },
   {
     "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "position",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "underlyingAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "int256",
+            "name": "underlyingAmount",
+            "type": "int256"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "int256",
+            "name": "exerciseAmount",
+            "type": "int256"
+          }
+        ],
+        "internalType": "struct IOptionSettlementEngine.Position",
+        "name": "positionInfo",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
       { "internalType": "uint256", "name": "claimId", "type": "uint256" }
     ],
     "name": "redeem",
@@ -772,43 +809,6 @@
         "internalType": "contract ITokenURIGenerator",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
-    ],
-    "name": "underlying",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "underlyingAsset",
-            "type": "address"
-          },
-          {
-            "internalType": "int256",
-            "name": "underlyingPosition",
-            "type": "int256"
-          },
-          {
-            "internalType": "address",
-            "name": "exerciseAsset",
-            "type": "address"
-          },
-          {
-            "internalType": "int256",
-            "name": "exercisePosition",
-            "type": "int256"
-          }
-        ],
-        "internalType": "struct IOptionSettlementEngine.Underlying",
-        "name": "underlyingPosition",
-        "type": "tuple"
       }
     ],
     "stateMutability": "view",
