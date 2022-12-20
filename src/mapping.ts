@@ -11,15 +11,16 @@ import {
   OptionSettlementEngine,
   ApprovalForAll as ApprovalForAllEvent,
   ClaimRedeemed,
-  ExerciseAssigned,
   FeeAccrued,
   FeeSwept,
-  NewChain,
+  NewOptionType,
   OptionsExercised,
   OptionsWritten,
   TransferBatch as TransferBatchEvent,
   TransferSingle as TransferSingleEvent,
   URI as URIEvent,
+  FeeToUpdated,
+  FeeSwitchUpdated,
 } from "../generated/OptionSettlementEngine/OptionSettlementEngine";
 import { Option, Claim } from "../generated/schema";
 
@@ -45,6 +46,7 @@ import { ZERO_ADDRESS } from "./utils/constants";
 import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
 import {
   initializeToken,
+  loadOrInitializeFeeSwitch,
   loadOrInitializeToken,
   updateTokenDayData,
   updateValoremDayData,
@@ -64,17 +66,15 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   claim.option = event.params.optionId.toString();
   claim.claimed = true;
   claim.claimant = fetchAccount(event.params.redeemer).id;
-  claim.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
-  claim.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
-  claim.exerciseAmount = event.params.exerciseAmount;
-  claim.underlyingAmount = event.params.underlyingAmount;
+  claim.exerciseAmount = event.params.exerciseAmountRedeemed;
+  claim.underlyingAmount = event.params.underlyingAmountRedeemed;
 
   claim.save();
 
   // retrieve value of exercise assets being transfered
   let exerciseAssetAddress = claim.exerciseAsset as string;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
-  let exerciseAmount = event.params.exerciseAmount
+  let exerciseAmount = event.params.exerciseAmountRedeemed
     .toBigDecimal()
     .div(
       exponentToBigDecimal(
@@ -88,7 +88,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   // retrieve value of underlying assets being transfered
   let underlyingAssetAddress = claim.underlyingAsset as string;
   let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
-  let underlyingAmount = event.params.underlyingAmount
+  let underlyingAmount = event.params.underlyingAmountRedeemed
     .toBigDecimal()
     .div(
       exponentToBigDecimal(
@@ -141,7 +141,23 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   dayData.save();
 }
 
-export function handleExerciseAssigned(event: ExerciseAssigned): void {}
+export function handleFeeSwitchUpdated(event: FeeSwitchUpdated): void {
+  let isEnabled = event.params.enabled;
+  let feeTo = event.params.feeTo.toHexString();
+
+  let feeSwitch = loadOrInitializeFeeSwitch(event.address.toHexString());
+  feeSwitch.isEnabled = isEnabled;
+  feeSwitch.feeToAddress = feeTo;
+  feeSwitch.save();
+}
+
+export function handleFeeToUpdated(event: FeeToUpdated): void {
+  let newFeeTo = event.params.newFeeTo.toHexString();
+
+  let feeSwitch = loadOrInitializeFeeSwitch(event.address.toHexString());
+  feeSwitch.feeToAddress = newFeeTo;
+  feeSwitch.save();
+}
 
 export function handleFeeAccrued(event: FeeAccrued): void {
   let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
@@ -160,12 +176,12 @@ export function handleFeeAccrued(event: FeeAccrued): void {
 }
 
 export function handleFeeSwept(event: FeeSwept): void {
-  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.token).decimals());
+  let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
   let formattedAmount = event.params.amount
     .toBigDecimal()
     .div(exponentToBigDecimal(assetDecimals));
 
-  let assetPrice = getTokenPriceUSD(event.params.token.toHexString());
+  let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
   let dayData = updateValoremDayData(event);
@@ -175,7 +191,7 @@ export function handleFeeSwept(event: FeeSwept): void {
   dayData.save();
 }
 
-export function handleNewChain(event: NewChain): void {
+export function handleNewOptionType(event: NewOptionType): void {
   let option = Option.load(event.params.optionId.toString());
 
   if (option == null) {

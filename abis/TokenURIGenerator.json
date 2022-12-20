@@ -1,0 +1,242 @@
+[
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "underlyingAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "underlyingSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "exerciseSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint40",
+            "name": "exerciseTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint40",
+            "name": "expiryTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint96",
+            "name": "underlyingAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "exerciseAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "enum IOptionSettlementEngine.TokenType",
+            "name": "tokenType",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenURIGenerator.TokenURIParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "constructTokenURI",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "underlyingAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "underlyingSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "exerciseSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint40",
+            "name": "exerciseTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint40",
+            "name": "expiryTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint96",
+            "name": "underlyingAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "exerciseAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "enum IOptionSettlementEngine.TokenType",
+            "name": "tokenType",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenURIGenerator.TokenURIParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "generateDescription",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "underlyingAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "underlyingSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "exerciseSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint40",
+            "name": "exerciseTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint40",
+            "name": "expiryTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint96",
+            "name": "underlyingAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "exerciseAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "enum IOptionSettlementEngine.TokenType",
+            "name": "tokenType",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenURIGenerator.TokenURIParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "generateNFT",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "underlyingAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "underlyingSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "exerciseAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "exerciseSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint40",
+            "name": "exerciseTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint40",
+            "name": "expiryTimestamp",
+            "type": "uint40"
+          },
+          {
+            "internalType": "uint96",
+            "name": "underlyingAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "exerciseAmount",
+            "type": "uint96"
+          },
+          {
+            "internalType": "enum IOptionSettlementEngine.TokenType",
+            "name": "tokenType",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ITokenURIGenerator.TokenURIParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "generateName",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "pure",
+    "type": "function"
+  }
+]

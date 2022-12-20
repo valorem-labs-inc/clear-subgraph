@@ -6,9 +6,9 @@ dataSources:
     name: OptionSettlementEngine
     network: goerli
     source:
-      address: "0x8F4F0e14dBe9F53A54B9D8B7C18Ad5BB647b683d"
+      address: "0x77ba40dEad8ED6def739563fE4293A0035F296C9"
       abi: OptionSettlementEngine
-      startBlock: 7602662
+      startBlock: 8165025
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
@@ -39,19 +39,21 @@ dataSources:
       eventHandlers:
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
-        - event: ClaimRedeemed(indexed uint256,indexed uint256,indexed address,address,address,uint96,uint96)
+        - event: ClaimRedeemed(indexed uint256,indexed uint256,indexed address,uint256,uint256)
           handler: handleClaimRedeemed
-        - event: ExerciseAssigned(indexed uint256,indexed uint256,uint112)
-          handler: handleExerciseAssigned
-        - event: FeeAccrued(indexed address,indexed address,uint256)
+        - event: FeeAccrued(indexed uint256,indexed address,indexed address,uint256)
           handler: handleFeeAccrued
         - event: FeeSwept(indexed address,indexed address,uint256)
           handler: handleFeeSwept
-        - event: NewChain(indexed uint256,indexed address,indexed address,uint96,uint96,uint40,uint40)
-          handler: handleNewChain
+        - event: FeeSwitchUpdated(address,bool)
+          handler: handleFeeSwitchUpdated
+        - event: FeeToUpdated(indexed address)
+          handler: handleFeeToUpdated
+        - event: NewOptionType(uint256,indexed address,indexed address,uint96,uint96,uint40,indexed uint40)
+          handler: handleNewOptionType
         - event: OptionsExercised(indexed uint256,indexed address,uint112)
           handler: handleOptionsExercised
-        - event: OptionsWritten(indexed uint256,indexed address,uint256,uint112)
+        - event: OptionsWritten(indexed uint256,indexed address,indexed uint256,uint112)
           handler: handleOptionsWritten
         - event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
           handler: handleTransferBatch
