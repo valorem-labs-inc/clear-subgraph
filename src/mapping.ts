@@ -232,11 +232,12 @@ export function handleNewOptionType(event: NewOptionType): void {
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
-  let option = Option.load(event.params.optionId.toString());
+  let option = Option.load(event.params.optionId.toString())!;
 
-  if (option === null) {
-    option = new Option(event.params.optionId.toString());
-  }
+  // should never be null. if option doesnt exist, somethings wrong with handleNewOptionType
+  // if (option === null) {
+  //   option = new Option(event.params.optionId.toString());
+  // }
 
   let exerciseAssetAddress = option.exerciseAsset as string;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
@@ -338,11 +339,12 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   token.type = 2;
   token.save();
 
-  let option = Option.load(event.params.optionId.toString());
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-    option.save();
-  }
+  let option = Option.load(event.params.optionId.toString())!;
+  // should never be null. if option doesnt exist, somethings wrong with handleNewOptionType
+  // if (option == null) {
+  //   option = new Option(event.params.optionId.toString());
+  //   option.save();
+  // }
 
   const underlyingAssetAddress = option.underlyingAsset
     ? option.underlyingAsset
