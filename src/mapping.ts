@@ -112,27 +112,32 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   let exerciseAsset = loadOrInitializeToken(
     Address.fromString(exerciseAssetAddress as string)
   );
-  exerciseAsset.totalValueLocked =
-    exerciseAsset.totalValueLocked.minus(exerciseAmount);
-  exerciseAsset.totalValueLockedUSD =
-    exerciseAsset.totalValueLockedUSD.minus(exerciseValueUSD);
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.minus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.minus(
+    exerciseValueUSD
+  );
   exerciseAsset.save();
 
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.minus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.minus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
+    underlyingValueUSD
+  );
   underlyingAsset.save();
 
   updateTokenDayData(exerciseAsset, event);
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
 
   let dayData = updateValoremDayData(event);
@@ -227,11 +232,12 @@ export function handleNewOptionType(event: NewOptionType): void {
 }
 
 export function handleOptionsExercised(event: OptionsExercised): void {
-  let option = Option.load(event.params.optionId.toString());
+  let option = Option.load(event.params.optionId.toString())!;
 
-  if (option === null) {
-    option = new Option(event.params.optionId.toString());
-  }
+  // should never be null. if option doesnt exist, somethings wrong with handleNewOptionType
+  // if (option === null) {
+  //   option = new Option(event.params.optionId.toString());
+  // }
 
   let exerciseAssetAddress = option.exerciseAsset as string;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
@@ -277,19 +283,23 @@ export function handleOptionsExercised(event: OptionsExercised): void {
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.minus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.minus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
+    underlyingValueUSD
+  );
   underlyingAsset.save();
 
   let exerciseAsset = loadOrInitializeToken(
     Address.fromString(exerciseAssetAddress as string)
   );
-  exerciseAsset.totalValueLocked =
-    exerciseAsset.totalValueLocked.plus(exerciseAmount);
-  exerciseAsset.totalValueLockedUSD =
-    exerciseAsset.totalValueLockedUSD.plus(exerciseValueUSD);
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
+    exerciseValueUSD
+  );
   exerciseAsset.save();
 
   let dayData = updateValoremDayData(event);
@@ -300,39 +310,27 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
 
   updateTokenDayData(exerciseAsset, event);
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
-  let claim = Claim.load(event.params.claimId.toString());
-
-  if (claim == null) {
-    claim = new Claim(event.params.claimId.toString());
-    claim.save();
-  }
-
-  // TODO(There should be a claim created event or something containing the required metadata)
-  claim.option = event.params.optionId.toString();
-  claim.claimed = false;
-  claim.writer = fetchAccount(event.transaction.from).id;
-  claim.amountWritten = event.params.amount;
-  claim.save();
-
   let contract = fetchERC1155(event.address);
   let token = fetchERC1155Token(contract, event.params.claimId);
   token.claim = event.params.claimId.toString();
   token.type = 2;
   token.save();
 
-  let option = Option.load(event.params.optionId.toString());
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-    option.save();
-  }
+  let option = Option.load(event.params.optionId.toString())!;
+  // should never be null. if option doesnt exist, somethings wrong with handleNewOptionType
+  // if (option == null) {
+  //   option = new Option(event.params.optionId.toString());
+  //   option.save();
+  // }
 
   const underlyingAssetAddress = option.underlyingAsset
     ? option.underlyingAsset
@@ -357,18 +355,21 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     .times(event.params.amount.toBigDecimal());
 
   // Update TVL to reflect the value of underlying tokens being transfered in.
-  contract.totalValueLockedUSD =
-    contract.totalValueLockedUSD.plus(underlyingValueUSD);
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
   contract.save();
 
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
 
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.plus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.plus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.plus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
 
   underlyingAsset.save();
 
@@ -378,9 +379,28 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
+
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+    claim.save();
+  }
+
+  claim.option = event.params.optionId.toString();
+  claim.writer = fetchAccount(event.transaction.from).id;
+  claim.amountWritten = event.params.amount;
+  claim.amountExercised = BigInt.fromI32(0);
+  claim.claimed = false;
+  claim.exerciseAsset = option.exerciseAsset;
+  claim.exerciseAmount = option.exerciseAmount;
+  claim.underlyingAsset = option.underlyingAsset;
+  claim.underlyingAmount = option.underlyingAmount;
+  claim.save();
 }
 
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs

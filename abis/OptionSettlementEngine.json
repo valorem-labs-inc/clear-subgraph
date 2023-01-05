@@ -478,6 +478,13 @@
     "type": "event"
   },
   {
+    "inputs": [],
+    "name": "acceptFeeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       { "internalType": "address", "name": "", "type": "address" },
       { "internalType": "uint256", "name": "", "type": "uint256" }
@@ -517,8 +524,7 @@
             "name": "amountExercised",
             "type": "uint256"
           },
-          { "internalType": "uint256", "name": "optionId", "type": "uint256" },
-          { "internalType": "bool", "name": "unredeemed", "type": "bool" }
+          { "internalType": "uint256", "name": "optionId", "type": "uint256" }
         ],
         "internalType": "struct IOptionSettlementEngine.Claim",
         "name": "claimInfo",

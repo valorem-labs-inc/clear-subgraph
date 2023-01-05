@@ -6,9 +6,9 @@ dataSources:
     name: OptionSettlementEngine
     network: goerli
     source:
-      address: "0x77ba40dEad8ED6def739563fE4293A0035F296C9"
+      address: "0x46c8F67675A3C95cA4D21c282A207D87829C56AA"
       abi: OptionSettlementEngine
-      startBlock: 8165025
+      startBlock: 8250905
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
