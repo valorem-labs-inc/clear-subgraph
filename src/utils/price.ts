@@ -182,10 +182,10 @@ export function sqrtPriceX96ToTokenPrices(
   token0: ERC20,
   token1: ERC20
 ): BigDecimal[] {
+  const Q192 = BigInt.fromI32(2).pow(192);
+
   let num = sqrtPriceX96.times(sqrtPriceX96).toBigDecimal();
-  let denom = BigDecimal.fromString(
-    "6277101735386680763835789423207666416102355444464034512896"
-  );
+  let denom = BigDecimal.fromString(Q192.toString());
 
   let price1 = num
     .div(denom)
