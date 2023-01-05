@@ -45,7 +45,10 @@ export function getEthPriceInUSD(): BigDecimal {
   );
 
   if (
-    daiPool.token0().toHexString().toLowerCase() == WETH_ADDRESS.toLowerCase()
+    daiPool
+      .token0()
+      .toHexString()
+      .toLowerCase() == WETH_ADDRESS.toLowerCase()
   ) {
     return tokenPrices[1];
   }
