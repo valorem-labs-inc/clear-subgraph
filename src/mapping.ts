@@ -319,20 +319,6 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 }
 
 export function handleOptionsWritten(event: OptionsWritten): void {
-  let claim = Claim.load(event.params.claimId.toString());
-
-  if (claim == null) {
-    claim = new Claim(event.params.claimId.toString());
-    claim.save();
-  }
-
-  // TODO(There should be a claim created event or something containing the required metadata)
-  claim.option = event.params.optionId.toString();
-  claim.claimed = false;
-  claim.writer = fetchAccount(event.transaction.from).id;
-  claim.amountWritten = event.params.amount;
-  claim.save();
-
   let contract = fetchERC1155(event.address);
   let token = fetchERC1155Token(contract, event.params.claimId);
   token.claim = event.params.claimId.toString();
@@ -397,6 +383,24 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     underlyingValueUSD
   );
   underlyingDayData.save();
+
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+    claim.save();
+  }
+
+  claim.option = event.params.optionId.toString();
+  claim.writer = fetchAccount(event.transaction.from).id;
+  claim.amountWritten = event.params.amount;
+  claim.amountExercised = BigInt.fromI32(0);
+  claim.claimed = false;
+  claim.exerciseAsset = option.exerciseAsset;
+  claim.exerciseAmount = option.exerciseAmount;
+  claim.underlyingAsset = option.underlyingAsset;
+  claim.underlyingAmount = option.underlyingAmount;
+  claim.save();
 }
 
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
