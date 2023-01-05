@@ -239,10 +239,11 @@ export function handleOptionsExercised(event: OptionsExercised): void {
   //   option = new Option(event.params.optionId.toString());
   // }
 
-  let exerciseAssetAddress = option.exerciseAsset as string;
+  // Handle Exercise Asset
+  let exerciseAssetAddress = option.exerciseAsset!;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
-  let exerciseAmount = (option.exerciseAmount as BigInt)
-    .toBigDecimal()
+  let exerciseAmount = option
+    .exerciseAmount!.toBigDecimal()
     .div(
       exponentToBigDecimal(
         BigInt.fromI64(
@@ -253,11 +254,22 @@ export function handleOptionsExercised(event: OptionsExercised): void {
   let exerciseValueUSD = exercisePriceUSD
     .times(exerciseAmount)
     .times(event.params.amount.toBigDecimal());
+  let exerciseAsset = loadOrInitializeToken(
+    Address.fromString(exerciseAssetAddress)
+  );
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
+    exerciseValueUSD
+  );
+  exerciseAsset.save();
 
-  let underlyingAssetAddress = option.underlyingAsset as string;
+  // Handle Underlying Asset
+  let underlyingAssetAddress = option.underlyingAsset!;
   let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
-  let underlyingAmount = (option.underlyingAmount as BigInt)
-    .toBigDecimal()
+  let underlyingAmount = option
+    .underlyingAmount!.toBigDecimal()
     .div(
       exponentToBigDecimal(
         BigInt.fromI64(
@@ -270,18 +282,8 @@ export function handleOptionsExercised(event: OptionsExercised): void {
     .times(underlyingAmount)
     .times(event.params.amount.toBigDecimal());
 
-  let contract = fetchERC1155(event.address);
-
-  // Update TVL to reflect the value of the exercise tokens being transfered in
-  // and underlying tokens being transfered out
-  contract.totalValueLockedUSD = contract.totalValueLockedUSD
-    .plus(exerciseValueUSD)
-    .minus(underlyingValueUSD);
-
-  contract.save();
-
   let underlyingAsset = loadOrInitializeToken(
-    Address.fromString(underlyingAssetAddress as string)
+    Address.fromString(underlyingAssetAddress)
   );
   underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
     underlyingAmount
@@ -291,17 +293,17 @@ export function handleOptionsExercised(event: OptionsExercised): void {
   );
   underlyingAsset.save();
 
-  let exerciseAsset = loadOrInitializeToken(
-    Address.fromString(exerciseAssetAddress as string)
-  );
-  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
-    exerciseAmount
-  );
-  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
-    exerciseValueUSD
-  );
-  exerciseAsset.save();
+  // Handle contract
+  let contract = fetchERC1155(event.address);
+  // Update TVL to reflect the value of the exercise tokens being transfered in
+  // and underlying tokens being transfered out
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD
+    .plus(exerciseValueUSD)
+    .minus(underlyingValueUSD);
 
+  contract.save();
+
+  // Handle Day Data
   let dayData = updateValoremDayData(event);
 
   dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
@@ -332,20 +334,16 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   //   option.save();
   // }
 
-  const underlyingAssetAddress = option.underlyingAsset
-    ? option.underlyingAsset
-    : ZERO_ADDRESS;
+  const underlyingAssetAddress = option.underlyingAsset!;
 
-  const underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress as string);
+  const underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
 
-  const underlyingAmount = (option.underlyingAmount as BigInt)
-    .toBigDecimal()
+  const underlyingAmount = option
+    .underlyingAmount!.toBigDecimal()
     .div(
       exponentToBigDecimal(
         BigInt.fromI64(
-          ERC20.bind(
-            Address.fromString(underlyingAssetAddress as string)
-          ).decimals()
+          ERC20.bind(Address.fromString(underlyingAssetAddress)).decimals()
         )
       )
     );
@@ -354,14 +352,8 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     .times(underlyingAmount)
     .times(event.params.amount.toBigDecimal());
 
-  // Update TVL to reflect the value of underlying tokens being transfered in.
-  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
-    underlyingValueUSD
-  );
-  contract.save();
-
   let underlyingAsset = loadOrInitializeToken(
-    Address.fromString(underlyingAssetAddress as string)
+    Address.fromString(underlyingAssetAddress)
   );
 
   underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.plus(
@@ -372,6 +364,12 @@ export function handleOptionsWritten(event: OptionsWritten): void {
   );
 
   underlyingAsset.save();
+
+  // Update TVL to reflect the value of underlying tokens being transfered in.
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
+  contract.save();
 
   let dayData = updateValoremDayData(event);
   dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
