@@ -112,27 +112,32 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
   let exerciseAsset = loadOrInitializeToken(
     Address.fromString(exerciseAssetAddress as string)
   );
-  exerciseAsset.totalValueLocked =
-    exerciseAsset.totalValueLocked.minus(exerciseAmount);
-  exerciseAsset.totalValueLockedUSD =
-    exerciseAsset.totalValueLockedUSD.minus(exerciseValueUSD);
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.minus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.minus(
+    exerciseValueUSD
+  );
   exerciseAsset.save();
 
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.minus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.minus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
+    underlyingValueUSD
+  );
   underlyingAsset.save();
 
   updateTokenDayData(exerciseAsset, event);
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
 
   let dayData = updateValoremDayData(event);
@@ -277,19 +282,23 @@ export function handleOptionsExercised(event: OptionsExercised): void {
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.minus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.minus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
+    underlyingValueUSD
+  );
   underlyingAsset.save();
 
   let exerciseAsset = loadOrInitializeToken(
     Address.fromString(exerciseAssetAddress as string)
   );
-  exerciseAsset.totalValueLocked =
-    exerciseAsset.totalValueLocked.plus(exerciseAmount);
-  exerciseAsset.totalValueLockedUSD =
-    exerciseAsset.totalValueLockedUSD.plus(exerciseValueUSD);
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
+    exerciseValueUSD
+  );
   exerciseAsset.save();
 
   let dayData = updateValoremDayData(event);
@@ -300,8 +309,9 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
 
   updateTokenDayData(exerciseAsset, event);
@@ -357,18 +367,21 @@ export function handleOptionsWritten(event: OptionsWritten): void {
     .times(event.params.amount.toBigDecimal());
 
   // Update TVL to reflect the value of underlying tokens being transfered in.
-  contract.totalValueLockedUSD =
-    contract.totalValueLockedUSD.plus(underlyingValueUSD);
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
   contract.save();
 
   let underlyingAsset = loadOrInitializeToken(
     Address.fromString(underlyingAssetAddress as string)
   );
 
-  underlyingAsset.totalValueLocked =
-    underlyingAsset.totalValueLocked.plus(underlyingAmount);
-  underlyingAsset.totalValueLockedUSD =
-    underlyingAsset.totalValueLockedUSD.plus(underlyingValueUSD);
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.plus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
 
   underlyingAsset.save();
 
@@ -378,8 +391,9 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   let underlyingDayData = updateTokenDayData(underlyingAsset, event);
   underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD =
-    underlyingDayData.volumeUSD.plus(underlyingValueUSD);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
   underlyingDayData.save();
 }
 
