@@ -75,7 +75,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   /**
    * Handle Exercise Asset
-   * retrieve value of exercise assets being transfered
+   * retrieve value of exercise assets being transferred
    */
   let exerciseAssetAddress = claim.exerciseAsset!;
   let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
@@ -103,7 +103,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   /**
    * Handle Underlying Asset
-   * retrieve value of underlying assets being transfered
+   * retrieve value of underlying assets being transferred
    */
   let underlyingAssetAddress = claim.underlyingAsset as string;
   let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
@@ -131,7 +131,7 @@ export function handleClaimRedeemed(event: ClaimRedeemed): void {
 
   /**
    * Handle Contract
-   * Update TVL to reflect the value of the exercise and underlying tokens being transfered out.
+   * Update TVL to reflect the value of the exercise and underlying tokens being transferred out.
    */
   let contract = fetchERC1155(event.address);
   contract.totalValueLockedUSD = contract.totalValueLockedUSD
@@ -305,8 +305,8 @@ export function handleOptionsExercised(event: OptionsExercised): void {
 
   /**
    * Handle Contract
-   * Update TVL to reflect the value of the exercise tokens being transfered in
-   * and underlying tokens being transfered out
+   * Update TVL to reflect the value of the exercise tokens being transferred in
+   * and underlying tokens being transferred out
    */
   let contract = fetchERC1155(event.address);
   contract.totalValueLockedUSD = contract.totalValueLockedUSD
@@ -373,7 +373,7 @@ export function handleOptionsWritten(event: OptionsWritten): void {
 
   /**
    * Handle Contract
-   * Update TVL to reflect the value of underlying tokens being transfered in.
+   * Update TVL to reflect the value of underlying tokens being transferred in.
    */
   let contract = fetchERC1155(event.address);
   contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
@@ -512,7 +512,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   let ids = event.params.ids;
   let values = event.params.amounts;
 
-  // If this equality doesn't hold (some devs actually don't follox the ERC specifications) then we just can't make
+  // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
   // sens of what is happening. Don't try to make something out of stupid code, and just throw the event. This
   // contract doesn't follow the standard anyway.
   if (ids.length == values.length) {

@@ -140,7 +140,7 @@ type Token @entity {
 }
 
 type TokenDayData @entity {
-  # token address concatendated with date
+  # token address concatenated with date
   id: ID!
   # timestamp rounded to current day by dividing by 86400
   date: Int!
