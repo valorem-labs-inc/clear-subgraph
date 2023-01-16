@@ -23,8 +23,8 @@ const TOKEN_WHITELIST = [
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
-  // TODO: REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ETH price 1250 USD
+  // // TODO: REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
+  // // ! hardcode ETH price 1250 USD
   return BigDecimal.fromString("1250");
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
@@ -61,8 +61,6 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 
   const derivedEth = findEthPerToken(tokenAddress); // ! Hardcoded
 
-  // TODO REVERT FOR MAINNET. RETURNS ETH PRICE IF ADDRESS === WETH|ETH
-  // ! strict eq, '===', doesn't work here... AssemblyScript, why?
   if (
     tokenAddress.toLowerCase() == WETH_ADDRESS.toLowerCase() ||
     tokenAddress.toLowerCase() == ZERO_ADDRESS.toLowerCase()
@@ -77,8 +75,8 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 // or a whitelisted tokens WETH pool.
 // Credit: https://github.com/Uniswap/v3-subgraph/blob/main/src/utils/pricing.ts#L74
 export function findEthPerToken(tokenAddress: string): BigDecimal {
-  // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ERC20 price 1/1250 USD (stablecoins)
+  // // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
+  // // ! hardcode ERC20 price 1/1250 USD (stablecoins)
   return BigDecimal.fromString("0.0008");
 
   const uniswapFactory = UniswapV3Factory.bind(
