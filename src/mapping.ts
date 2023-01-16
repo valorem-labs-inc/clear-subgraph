@@ -54,6 +54,225 @@ import {
 
 // TODO(Implement these)
 
+export function handleNewOptionType(event: NewOptionType): void {
+  let option = Option.load(event.params.optionId.toString());
+
+  if (option == null) {
+    option = new Option(event.params.optionId.toString());
+    option.save();
+  }
+
+  option.creator = fetchAccount(event.transaction.from).id;
+  option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
+  option.exerciseTimestamp = event.params.exerciseTimestamp;
+  option.expiryTimestamp = event.params.expiryTimestamp;
+  option.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
+  option.underlyingAmount = event.params.underlyingAmount;
+  option.exerciseAmount = event.params.exerciseAmount;
+
+  option.save();
+
+  let contract = fetchERC1155(event.address);
+  let token = fetchERC1155Token(contract, event.params.optionId);
+  token.option = event.params.optionId.toString();
+  token.type = 1;
+  token.save();
+
+  let underlyingAsset = Token.load(event.params.underlyingAsset.toHexString());
+  if (!underlyingAsset) {
+    underlyingAsset = initializeToken(event.params.underlyingAsset);
+  }
+
+  let exerciseAsset = Token.load(event.params.exerciseAsset.toHexString());
+  if (!exerciseAsset) {
+    exerciseAsset = initializeToken(event.params.exerciseAsset);
+  }
+}
+
+export function handleOptionsWritten(event: OptionsWritten): void {
+  let option = Option.load(event.params.optionId.toString())!;
+
+  /**
+   * Handle Underlying Asset
+   */
+  const underlyingAssetAddress = option.underlyingAsset!;
+
+  const underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
+
+  const underlyingAmount = option
+    .underlyingAmount!.toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(
+          ERC20.bind(Address.fromString(underlyingAssetAddress)).decimals()
+        )
+      )
+    );
+
+  const underlyingValueUSD = underlyingPriceUSD
+    .times(underlyingAmount)
+    .times(event.params.amount.toBigDecimal());
+
+  let underlyingAsset = loadOrInitializeToken(
+    Address.fromString(underlyingAssetAddress)
+  );
+
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.plus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
+
+  underlyingAsset.save();
+
+  /**
+   * Handle Contract
+   * Update TVL to reflect the value of underlying tokens being transferred in.
+   */
+  let contract = fetchERC1155(event.address);
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
+    underlyingValueUSD
+  );
+  contract.save();
+
+  /**
+   * Handle Token
+   */
+  let token = fetchERC1155Token(contract, event.params.claimId);
+  token.claim = event.params.claimId.toString();
+  token.type = 2;
+  token.save();
+
+  /**
+   * Handle Day Data
+   */
+  let dayData = updateValoremDayData(event);
+  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
+  dayData.save();
+
+  let underlyingDayData = updateTokenDayData(underlyingAsset, event);
+  underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
+  underlyingDayData.save();
+
+  /**
+   * Handle Claim
+   */
+  let claim = Claim.load(event.params.claimId.toString());
+
+  if (claim == null) {
+    claim = new Claim(event.params.claimId.toString());
+    claim.save();
+  }
+
+  claim.option = event.params.optionId.toString();
+  claim.writer = fetchAccount(event.transaction.from).id;
+  claim.amountWritten = event.params.amount;
+  claim.amountExercised = BigInt.fromI32(0);
+  claim.claimed = false;
+  claim.exerciseAsset = option.exerciseAsset;
+  claim.exerciseAmount = option.exerciseAmount;
+  claim.underlyingAsset = option.underlyingAsset;
+  claim.underlyingAmount = option.underlyingAmount;
+  claim.save();
+}
+
+export function handleOptionsExercised(event: OptionsExercised): void {
+  let option = Option.load(event.params.optionId.toString())!;
+
+  /**
+   * Handle Exercise Asset
+   */
+  let exerciseAssetAddress = option.exerciseAsset!;
+  let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
+  let exerciseAmount = option
+    .exerciseAmount!.toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(
+          ERC20.bind(Address.fromString(exerciseAssetAddress)).decimals()
+        )
+      )
+    );
+  let exerciseValueUSD = exercisePriceUSD
+    .times(exerciseAmount)
+    .times(event.params.amount.toBigDecimal());
+
+  let exerciseAsset = loadOrInitializeToken(
+    Address.fromString(exerciseAssetAddress)
+  );
+  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
+    exerciseAmount
+  );
+  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
+    exerciseValueUSD
+  );
+  exerciseAsset.save();
+
+  /**
+   * Handle Underlying Asset
+   */
+  let underlyingAssetAddress = option.underlyingAsset!;
+  let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
+  let underlyingAmount = option
+    .underlyingAmount!.toBigDecimal()
+    .div(
+      exponentToBigDecimal(
+        BigInt.fromI64(
+          ERC20.bind(Address.fromString(underlyingAssetAddress)).decimals()
+        )
+      )
+    );
+
+  let underlyingValueUSD = underlyingPriceUSD
+    .times(underlyingAmount)
+    .times(event.params.amount.toBigDecimal());
+
+  let underlyingAsset = loadOrInitializeToken(
+    Address.fromString(underlyingAssetAddress)
+  );
+  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
+    underlyingAmount
+  );
+  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
+    underlyingValueUSD
+  );
+  underlyingAsset.save();
+
+  /**
+   * Handle Contract
+   * Update TVL to reflect the value of the exercise tokens being transferred in
+   * and underlying tokens being transferred out
+   */
+  let contract = fetchERC1155(event.address);
+  contract.totalValueLockedUSD = contract.totalValueLockedUSD
+    .plus(exerciseValueUSD)
+    .minus(underlyingValueUSD);
+
+  contract.save();
+
+  /**
+   * Handle Day Data
+   */
+  let dayData = updateValoremDayData(event);
+
+  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
+
+  dayData.save();
+
+  let underlyingDayData = updateTokenDayData(underlyingAsset, event);
+  underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
+  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
+    underlyingValueUSD
+  );
+  underlyingDayData.save();
+
+  updateTokenDayData(exerciseAsset, event);
+}
+
 export function handleClaimRedeemed(event: ClaimRedeemed): void {
   /**
    * Handle Claim
@@ -206,225 +425,6 @@ export function handleFeeSwept(event: FeeSwept): void {
   dayData.save();
 }
 
-export function handleNewOptionType(event: NewOptionType): void {
-  let option = Option.load(event.params.optionId.toString());
-
-  if (option == null) {
-    option = new Option(event.params.optionId.toString());
-    option.save();
-  }
-
-  option.creator = fetchAccount(event.transaction.from).id;
-  option.underlyingAsset = fetchAccount(event.params.underlyingAsset).id;
-  option.exerciseTimestamp = event.params.exerciseTimestamp;
-  option.expiryTimestamp = event.params.expiryTimestamp;
-  option.exerciseAsset = fetchAccount(event.params.exerciseAsset).id;
-  option.underlyingAmount = event.params.underlyingAmount;
-  option.exerciseAmount = event.params.exerciseAmount;
-
-  option.save();
-
-  let contract = fetchERC1155(event.address);
-  let token = fetchERC1155Token(contract, event.params.optionId);
-  token.option = event.params.optionId.toString();
-  token.type = 1;
-  token.save();
-
-  let underlyingAsset = Token.load(event.params.underlyingAsset.toHexString());
-  if (!underlyingAsset) {
-    underlyingAsset = initializeToken(event.params.underlyingAsset);
-  }
-
-  let exerciseAsset = Token.load(event.params.exerciseAsset.toHexString());
-  if (!exerciseAsset) {
-    exerciseAsset = initializeToken(event.params.exerciseAsset);
-  }
-}
-
-export function handleOptionsExercised(event: OptionsExercised): void {
-  let option = Option.load(event.params.optionId.toString())!;
-
-  /**
-   * Handle Exercise Asset
-   */
-  let exerciseAssetAddress = option.exerciseAsset!;
-  let exercisePriceUSD = getTokenPriceUSD(exerciseAssetAddress);
-  let exerciseAmount = option
-    .exerciseAmount!.toBigDecimal()
-    .div(
-      exponentToBigDecimal(
-        BigInt.fromI64(
-          ERC20.bind(Address.fromString(exerciseAssetAddress)).decimals()
-        )
-      )
-    );
-  let exerciseValueUSD = exercisePriceUSD
-    .times(exerciseAmount)
-    .times(event.params.amount.toBigDecimal());
-
-  let exerciseAsset = loadOrInitializeToken(
-    Address.fromString(exerciseAssetAddress)
-  );
-  exerciseAsset.totalValueLocked = exerciseAsset.totalValueLocked.plus(
-    exerciseAmount
-  );
-  exerciseAsset.totalValueLockedUSD = exerciseAsset.totalValueLockedUSD.plus(
-    exerciseValueUSD
-  );
-  exerciseAsset.save();
-
-  /**
-   * Handle Underlying Asset
-   */
-  let underlyingAssetAddress = option.underlyingAsset!;
-  let underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
-  let underlyingAmount = option
-    .underlyingAmount!.toBigDecimal()
-    .div(
-      exponentToBigDecimal(
-        BigInt.fromI64(
-          ERC20.bind(Address.fromString(underlyingAssetAddress)).decimals()
-        )
-      )
-    );
-
-  let underlyingValueUSD = underlyingPriceUSD
-    .times(underlyingAmount)
-    .times(event.params.amount.toBigDecimal());
-
-  let underlyingAsset = loadOrInitializeToken(
-    Address.fromString(underlyingAssetAddress)
-  );
-  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.minus(
-    underlyingAmount
-  );
-  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.minus(
-    underlyingValueUSD
-  );
-  underlyingAsset.save();
-
-  /**
-   * Handle Contract
-   * Update TVL to reflect the value of the exercise tokens being transferred in
-   * and underlying tokens being transferred out
-   */
-  let contract = fetchERC1155(event.address);
-  contract.totalValueLockedUSD = contract.totalValueLockedUSD
-    .plus(exerciseValueUSD)
-    .minus(underlyingValueUSD);
-
-  contract.save();
-
-  /**
-   * Handle Day Data
-   */
-  let dayData = updateValoremDayData(event);
-
-  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
-
-  dayData.save();
-
-  let underlyingDayData = updateTokenDayData(underlyingAsset, event);
-  underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
-    underlyingValueUSD
-  );
-  underlyingDayData.save();
-
-  updateTokenDayData(exerciseAsset, event);
-}
-
-export function handleOptionsWritten(event: OptionsWritten): void {
-  let option = Option.load(event.params.optionId.toString())!;
-
-  /**
-   * Handle Underlying Asset
-   */
-  const underlyingAssetAddress = option.underlyingAsset!;
-
-  const underlyingPriceUSD = getTokenPriceUSD(underlyingAssetAddress);
-
-  const underlyingAmount = option
-    .underlyingAmount!.toBigDecimal()
-    .div(
-      exponentToBigDecimal(
-        BigInt.fromI64(
-          ERC20.bind(Address.fromString(underlyingAssetAddress)).decimals()
-        )
-      )
-    );
-
-  const underlyingValueUSD = underlyingPriceUSD
-    .times(underlyingAmount)
-    .times(event.params.amount.toBigDecimal());
-
-  let underlyingAsset = loadOrInitializeToken(
-    Address.fromString(underlyingAssetAddress)
-  );
-
-  underlyingAsset.totalValueLocked = underlyingAsset.totalValueLocked.plus(
-    underlyingAmount
-  );
-  underlyingAsset.totalValueLockedUSD = underlyingAsset.totalValueLockedUSD.plus(
-    underlyingValueUSD
-  );
-
-  underlyingAsset.save();
-
-  /**
-   * Handle Contract
-   * Update TVL to reflect the value of underlying tokens being transferred in.
-   */
-  let contract = fetchERC1155(event.address);
-  contract.totalValueLockedUSD = contract.totalValueLockedUSD.plus(
-    underlyingValueUSD
-  );
-  contract.save();
-
-  /**
-   * Handle Token
-   */
-  let token = fetchERC1155Token(contract, event.params.claimId);
-  token.claim = event.params.claimId.toString();
-  token.type = 2;
-  token.save();
-
-  /**
-   * Handle Day Data
-   */
-  let dayData = updateValoremDayData(event);
-  dayData.volumeUSD = dayData.volumeUSD.plus(underlyingValueUSD);
-  dayData.save();
-
-  let underlyingDayData = updateTokenDayData(underlyingAsset, event);
-  underlyingDayData.volume = underlyingDayData.volume.plus(underlyingAmount);
-  underlyingDayData.volumeUSD = underlyingDayData.volumeUSD.plus(
-    underlyingValueUSD
-  );
-  underlyingDayData.save();
-
-  /**
-   * Handle Claim
-   */
-  let claim = Claim.load(event.params.claimId.toString());
-
-  if (claim == null) {
-    claim = new Claim(event.params.claimId.toString());
-    claim.save();
-  }
-
-  claim.option = event.params.optionId.toString();
-  claim.writer = fetchAccount(event.transaction.from).id;
-  claim.amountWritten = event.params.amount;
-  claim.amountExercised = BigInt.fromI32(0);
-  claim.claimed = false;
-  claim.exerciseAsset = option.exerciseAsset;
-  claim.exerciseAmount = option.exerciseAmount;
-  claim.underlyingAsset = option.underlyingAsset;
-  claim.underlyingAmount = option.underlyingAmount;
-  claim.save();
-}
-
 // Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
 
 function registerTransfer(
@@ -450,7 +450,6 @@ function registerTransfer(
   ev.operator = operator.id;
   ev.value = decimals.toDecimals(value);
   ev.valueExact = value;
-
   if (Address.fromString(from.id) == constants.ADDRESS_ZERO) {
     let totalSupply = fetchERC1155Balance(token, null);
     totalSupply.valueExact = totalSupply.valueExact.plus(value);
@@ -461,11 +460,9 @@ function registerTransfer(
     balance.valueExact = balance.valueExact.minus(value);
     balance.value = decimals.toDecimals(balance.valueExact);
     balance.save();
-
     ev.from = from.id;
     ev.fromBalance = balance.id;
   }
-
   if (Address.fromString(to.id) == constants.ADDRESS_ZERO) {
     let totalSupply = fetchERC1155Balance(token, null);
     totalSupply.valueExact = totalSupply.valueExact.minus(value);
@@ -476,11 +473,9 @@ function registerTransfer(
     balance.valueExact = balance.valueExact.plus(value);
     balance.value = decimals.toDecimals(balance.valueExact);
     balance.save();
-
     ev.to = to.id;
     ev.toBalance = balance.id;
   }
-
   token.save();
   ev.save();
 }
@@ -490,7 +485,6 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   let operator = fetchAccount(event.params.operator);
   let from = fetchAccount(event.params.from);
   let to = fetchAccount(event.params.to);
-
   registerTransfer(
     event,
     "",
@@ -508,10 +502,8 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   let operator = fetchAccount(event.params.operator);
   let from = fetchAccount(event.params.from);
   let to = fetchAccount(event.params.to);
-
   let ids = event.params.ids;
   let values = event.params.amounts;
-
   // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
   // sens of what is happening. Don't try to make something out of stupid code, and just throw the event. This
   // contract doesn't follow the standard anyway.
