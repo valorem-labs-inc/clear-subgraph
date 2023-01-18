@@ -1,13 +1,32 @@
-type Option @entity {
+type OptionType @entity {
+  # OptionId
   id: ID!
-  underlyingAsset: Account
-  exerciseTimestamp: BigInt
-  expiryTimestamp: BigInt
-  exerciseAsset: Account
-  underlyingAmount: BigInt
+
+  # Position
+  underlyingAsset: Token!
+  underlyingAmount: BigInt!
+  exerciseAsset: Token!
+  exerciseAmount: BigInt!
+
+  # Exercisable Window
+  exerciseTimestamp: BigInt!
+  expiryTimestamp: BigInt!
+
+  # The deterministic seed used for fair exercise assignment
   settlementSeed: BigInt
-  exerciseAmount: BigInt
-  creator: Account # address
+
+  # The address that created the newOptionType
+  creator: Account!
+  # The transaction hash for the creation of the newOptionType
+  createTx: String!
+
+  # The amount of ERC-1155 options written for this OptionType
+  amountWritten: BigInt!
+  # The amount of ERC-1155 options exercised for this OptionType
+  amountExercised: BigInt!
+
+  # Claims that belong to this OptionType
+  claims: [Claim!]!
 }
 
 type Claim @entity {
