@@ -14,8 +14,8 @@ type OptionType @entity {
 
   # The address that created the newOptionType
   creator: Account!
-  # The transaction hash for the creation of the newOptionType
-  createTx: String!
+  # The transaction for the creation of the newOptionType
+  createTx: Transaction!
 
   # The amount of ERC-1155 options written for this OptionType
   amountWritten: BigInt!
@@ -35,15 +35,15 @@ type Claim @entity {
 
   # The address that wrote the claim
   writer: Account!
-  # The  hash of the write transaction
-  writeTx: String!
+  # The write transaction
+  writeTx: Transaction!
 
   # Whether or not claim has been redeemed
   redeemed: Boolean!
   # Optional: The address that redeemed the claim
   redeemer: Account
-  # Optional: The hash of the redeem transaction
-  redeemTx: String
+  # Optional: The redeem transaction
+  redeemTx: Transaction
 
   # The total number of fungible ERC-1155 Options that this claim corresponds to
   amountWritten: BigInt!
