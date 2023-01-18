@@ -239,10 +239,13 @@ type TokenDayData @entity {
   notionalVolFeesSweptUSD: BigDecimal!
 }
 
-type FeeSwitch @entity {
-  # OptionSettlementEngine contract address
+type Clearinghouse @entity {
+  # Clearinghouse contract address
   id: ID!
-  # recipient of fees
-  feeToAddress: String!
-  isEnabled: Boolean!
+
+  # Whether or not fees for protocol are enabled
+  feesEnabled: Boolean!
+  # The address of the recipient of protocol fees
+  feeToAddress: Account!
+
 }
