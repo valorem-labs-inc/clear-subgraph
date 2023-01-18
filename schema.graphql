@@ -162,19 +162,27 @@ type DecimalValue @entity {
   decimals: Int!
 }
 
-type ValoremDayData @entity {
-  # timestamp rounded to current day by dividing by 86400
+type ClearinghouseDayData @entity {
+  # Timestamp of day at 00:00AM UTC
   id: ID!
-  # timestamp rounded to current day by dividing by 86400
+  # Timestamp of day at 00:00AM UTC
   date: Int!
-  # tvl in USD terms
+
+  # TVL in USD
   totalValueLockedUSD: BigDecimal!
-  # volume in USD terms
-  volumeUSD: BigDecimal!
-  # fees accrued in USD terms
-  feesAccrued: BigDecimal!
-  # fees swept in USD terms
-  feesSwept: BigDecimal!
+
+  # Notional Volumes in USD
+  notionalVolWrittenUSD: BigDecimal! # Underlying Asset written
+  notionalVolExercisedUSD: BigDecimal! # Exercise Asset exercised for Options
+  notionalVolRedeemedUSD: BigDecimal! # Underlying and/or Exercise Asset redeemed from Claims
+  notionalVolTransferredUSD: BigDecimal! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
+  notionalVolSettledUSD: BigDecimal! # Fee Earning Volume; Written + Exercised
+  notionalVolSumUSD: BigDecimal! # Written + Exercised + Redeemed + Transferred
+  notionalVolFeesAccruedUSD: BigDecimal!
+  notionalVolFeesSweptUSD: BigDecimal!
+
+  # Metrics for each token on same day
+  tokenDayDatas: [TokenDayData!]! @derivedFrom(field: "clearinghouseDayData")
 }
 
 type Token @entity {
@@ -194,23 +202,41 @@ type Token @entity {
   # Lifetime sum of tokens paid to Valorem as fees
   feesAccrued: BigInt!
 
+  # Daily metrics (tvl, volume, etc) for the token
+  tokenDayDatas: [TokenDayData!]! @derivedFrom(field: "token")
 }
 
 type TokenDayData @entity {
-  # token address concatendated with date
+  # Token Address + Timestamp of day at 00:00AM UTC
   id: ID!
-  # timestamp rounded to current day by dividing by 86400
+  # Timestamp of day at 00:00AM UTC
   date: Int!
-  # pointer to token
+
+  # The Token that these metrics belong to
   token: Token!
-  # tvl across all contracts in token units
-  totalValueLocked: BigDecimal!
-  # tvl across all contracts in usd
-  totalValueLockedUSD: BigDecimal!
-  # token volume in token units
-  volume: BigDecimal!
-  # token volume in usd
-  volumeUSD: BigDecimal!
+
+  # TVL in Clearinghouse in token units
+  totalValueLocked: BigInt!
+
+  ## Notional Volumes in token units
+  notionalVolWritten: BigInt! # Underlying Asset written
+  notionalVolExercised: BigInt! # Exercise Asset exercised for Options
+  notionalVolRedeemed: BigInt! # Underlying and/or Exercise Asset redeemed from Claims
+  notionalVolTransferred: BigInt! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
+  notionalVolSettled: BigInt! # Fee Earning Volume; Written + Exercised
+  notionalVolSum: BigInt! # Written + Exercised + Redeemed + Transferred
+  notionalVolFeesAccrued: BigInt!
+  notionalVolFeesSwept: BigInt!
+
+  ## Notional Volumes in USD
+  notionalVolWrittenUSD: BigDecimal!
+  notionalVolExercisedUSD: BigDecimal!
+  notionalVolRedeemedUSD: BigDecimal!
+  notionalVolTransferredUSD: BigDecimal!
+  notionalVolSettledUSD: BigDecimal!
+  notionalVolSumUSD: BigDecimal!
+  notionalVolFeesAccruedUSD: BigDecimal!
+  notionalVolFeesSweptUSD: BigDecimal!
 }
 
 type FeeSwitch @entity {
