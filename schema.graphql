@@ -181,7 +181,9 @@ type ClearinghouseDayData @entity {
   notionalVolFeesAccruedUSD: BigDecimal!
   notionalVolFeesSweptUSD: BigDecimal!
 
-  # Metrics for each token on same day
+  # Clearinghouse pointer
+  clearinghouse: Clearinghouse!
+  # Metrics for each Token on same day
   tokenDayDatas: [TokenDayData!]! @derivedFrom(field: "clearinghouseDayData")
 }
 
@@ -237,6 +239,9 @@ type TokenDayData @entity {
   notionalVolSumUSD: BigDecimal!
   notionalVolFeesAccruedUSD: BigDecimal!
   notionalVolFeesSweptUSD: BigDecimal!
+
+  # Pointer to ClearinghouseDayData for same day
+  clearinghouseDayData: ClearinghouseDayData!
 }
 
 type Clearinghouse @entity {
@@ -248,4 +253,7 @@ type Clearinghouse @entity {
   # The address of the recipient of protocol fees
   feeToAddress: Account!
 
+  # Daily metrics
+  clearinghouseDayDatas: [ClearinghouseDayData!]!
+    @derivedFrom(field: "clearinghouse")
 }
