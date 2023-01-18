@@ -178,12 +178,17 @@ type ValoremDayData @entity {
 }
 
 type Token @entity {
+  # Token Address
   id: ID!
+
+  # Token Info
   symbol: String!
   name: String!
-  decimals: BigInt!
-  totalValueLocked: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
+  decimals: Int!
+
+  # Total number of tokens in Clearinghouse
+  totalValueLocked: BigInt!
+
 }
 
 type TokenDayData @entity {
