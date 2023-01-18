@@ -74,17 +74,6 @@ export function loadOrInitializeTransaction(txHash: string): Transaction {
   return tx;
 }
 
-export function loadOrInitializeAccount(address: string): Account {
-  let account = Account.load(address);
-  if (account) return account;
-
-  // init
-  account = new Account(address);
-  account.optionIDsOwned = new Array<string>();
-  account.save();
-  return account;
-}
-
 export function getBeginningOfDay(timestamp: BigInt): Date {
   const dayStartTimestamp = (timestamp.toI32() / 86400) * 86400;
   const dayStartMilliseconds = dayStartTimestamp * 1000;

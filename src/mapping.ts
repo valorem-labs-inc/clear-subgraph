@@ -45,7 +45,7 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get entities
   const underlyingToken = loadOrInitializeToken(underlyingAddress);
   const exerciseToken = loadOrInitializeToken(exerciseAddress);
-  const creator = loadOrInitializeAccount(creatorAddress);
+  const creator = fetchAccount(creatorAddress);
 
   // initialize new OptionType
   const optionType = new OptionType(optionId);
@@ -75,7 +75,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   // get entities
   const optionType = OptionType.load(optionId)!;
   const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
-  const writer = loadOrInitializeAccount(writerAddress);
+  const writer = fetchAccount(writerAddress);
 
   // initialize new Claim
   const claim = new Claim(claimId);
@@ -172,7 +172,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   const optionType = OptionType.load(optionId)!;
   const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
   const exerciseToken = loadOrInitializeToken(optionType.underlyingAsset);
-  const exerciser = loadOrInitializeAccount(exerciserAddress);
+  const exerciser = fetchAccount(exerciserAddress);
 
   // Delete any ERC1155 transfers that were created in the same txHash
   const tx = checkForDuplicateTransferSingleOrBatch(txHash);
@@ -306,7 +306,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   const claim = Claim.load(claimId)!;
   const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
   const exerciseToken = loadOrInitializeToken(optionType.underlyingAsset);
-  const redeemer = loadOrInitializeAccount(redeemerAddress);
+  const redeemer = fetchAccount(redeemerAddress);
 
   // Delete any ERC1155 transfers that were created in the same txHash
   const tx = checkForDuplicateTransferSingleOrBatch(txHash);
