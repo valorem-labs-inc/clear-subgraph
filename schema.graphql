@@ -210,6 +210,8 @@ type TokenDayData @entity {
 
   # TVL in OSE in token units
   totalValueLocked: BigInt!
+  # TVL in OSE in USD
+  totalValueLockedUSD: BigDecimal!
 
   ## Notional Volumes in token units
   notionalVolWritten: BigInt! # Underlying Asset written
