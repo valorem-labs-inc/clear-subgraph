@@ -30,17 +30,32 @@ type OptionType @entity {
 }
 
 type Claim @entity {
+  # ClaimId
   id: ID!
-  option: Option
-  writer: Account
-  amountWritten: BigInt
-  amountExercised: BigInt
-  claimed: Boolean
-  claimant: Account # address
-  exerciseAsset: Account # address
-  underlyingAsset: Account # address
-  exerciseAmount: BigInt
-  underlyingAmount: BigInt
+
+  # The OptionType the Claim belongs to
+  optionType: OptionType!
+
+  # The address that wrote the claim
+  writer: Account!
+  # The  hash of the write transaction
+  writeTx: String!
+
+  # Whether or not claim has been redeemed
+  redeemed: Boolean!
+  # Optional: The address that redeemed the claim
+  redeemer: Account
+  # Optional: The hash of the redeem transaction
+  redeemTx: String
+
+  # The total number of fungible ERC-1155 Options that this claim corresponds to
+  amountWritten: BigInt!
+  # The number of options this claim corresponds to that have been exercised
+  amountExercised: BigInt! # TODO: Depends on contract developments, then track via buckets(?)
+  # Tne amount of the Exercise Asset this claim can redeem post-expiry
+  exercisePositionAmount: BigInt! # TODO: Depends on amountExercised
+  # Tne amount of the Underlying Asset this claim can redeem post-expiry
+  underlyingPositionAmount: BigInt! # TODO: Depends on amountExercised
 }
 
 # https://github.com/OpenZeppelin/openzeppelin-subgraphs
