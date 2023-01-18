@@ -12,9 +12,6 @@ type OptionType @entity {
   exerciseTimestamp: BigInt!
   expiryTimestamp: BigInt!
 
-  # The deterministic seed used for fair exercise assignment
-  settlementSeed: BigInt
-
   # The address that created the newOptionType
   creator: Account!
   # The transaction hash for the creation of the newOptionType
