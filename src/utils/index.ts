@@ -83,20 +83,6 @@ export function loadOrInitializeTransaction(txHash: string): Transaction {
   return tx;
 }
 
-export function checkForDuplicateTransferSingleOrBatch(
-  txHash: string
-): Transaction {
-  // create Transaction entity to check against Transfers
-  const tx = loadOrInitializeTransaction(txHash);
-  if (tx.transferTx) {
-    if ((tx.transferTx as string[])[0]) {
-      store.remove("ERC1155Transfer", (tx.transferTx as string[])[0]);
-    }
-  }
-
-  return tx;
-}
-
 export function loadOrInitializeAccount(address: string): Account {
   let account = Account.load(address);
   if (account) return account;
