@@ -23,36 +23,27 @@ import { loadOrInitializeToken } from "./tokens";
 export * from "./tokens";
 
 // Retrieves or creates a daily data entity for tracking Volume and TVL.
-// Code adapted from https://github.com/Uniswap/v3-subgraph/blob/bf03f940f17c3d32ee58bd37386f26713cff21e2/src/utils/intervalUpdates.ts#L23
-// export function updateEngineDailyMetrics(
-//   event: ethereum.Event
-// ): EngineDailyMetrics {
-//   let valorem = ERC1155Contract.load(
-//     event.address.toHexString()
-//   ) as ERC1155Contract;
+export function loadOrInitializeDailyOSEMetrics(timestamp: BigInt): DayData {
+  const day = getBeginningOfDay(timestamp);
+  const dateUnix = BigInt.fromI64(day.getTime());
 
-//   let timestamp = event.block.timestamp.toI32();
+  let dailyOSEMetrics = DayData.load(dateUnix.toString());
+  if (dailyOSEMetrics) return dailyOSEMetrics;
 
-//   let dayID = timestamp / 86400;
-//   let dayStartTimestamp = dayID * 86400;
+  // init
+  dailyOSEMetrics = new DayData(dateUnix.toString());
+  dailyOSEMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.save();
 
-//   let EngineDailyMetrics = EngineDailyMetrics.load(dayID.toString());
-
-//   if (EngineDailyMetrics === null) {
-//     EngineDailyMetrics = new EngineDailyMetrics(dayID.toString());
-//     EngineDailyMetrics.date = dayStartTimestamp;
-//     // EngineDailyMetrics.totalValueLockedUSD = BigDecimal.zero(); // TODO REMOVE
-//     EngineDailyMetrics.volumeUSD = BigDecimal.zero();
-//     EngineDailyMetrics.feesAccrued = BigDecimal.zero();
-//     EngineDailyMetrics.feesSwept = BigDecimal.zero();
-//   }
-
-//   // EngineDailyMetrics.totalValueLockedUSD = valorem.totalValueLockedUSD; // TODO REMOVE
-
-//   EngineDailyMetrics.save();
-
-//   return EngineDailyMetrics;
-// }
+  return dailyOSEMetrics;
+}
 
 export function loadOrInitializeOptionSettlementEngine(
   contractAddress: string
@@ -139,30 +130,4 @@ export function loadOrInitializeDailyTokenMetrics(
   tokenMetrics.save();
 
   return tokenMetrics;
-}
-
-export function loadOrInitializeDailyOSEMetrics(
-  timestamp: BigInt
-): DailyOSEMetrics {
-  const day = getBeginningOfDay(timestamp);
-  const dateUnix = BigInt.fromI64(day.getTime());
-
-  let oseMetrics = DailyOSEMetrics.load(`OSE-${dateUnix}`);
-  if (oseMetrics) return oseMetrics;
-
-  // init
-  oseMetrics = new DailyOSEMetrics(`OSE-${dateUnix}`);
-  oseMetrics.dateUnix = dateUnix;
-  oseMetrics.dateISO = day.toISOString();
-  oseMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
-  oseMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
-  oseMetrics.save();
-
-  return oseMetrics;
 }
