@@ -178,8 +178,8 @@ type DayData @entity {
   notionalVolFeesAccruedUSD: BigDecimal!
   notionalVolFeesSweptUSD: BigDecimal!
 
-  # Clearinghouse pointer
-  clearinghouse: Clearinghouse!
+  # OptionSettlementEngine pointer
+  ose: OptionSettlementEngine!
   # Metrics for each Token on same day
   tokenDayData: [TokenDayData!]! @derivedFrom(field: "dayData")
 }
@@ -193,7 +193,7 @@ type Token @entity {
   name: String!
   decimals: Int!
 
-  # Total number of tokens in Clearinghouse
+  # Total number of tokens in the OSE
   totalValueLocked: BigInt!
 
   # Amount of tokens that are ready to be swept as fees
@@ -214,7 +214,7 @@ type TokenDayData @entity {
   # The Token that these metrics belong to
   token: Token!
 
-  # TVL in Clearinghouse in token units
+  # TVL in OSE in token units
   totalValueLocked: BigInt!
 
   ## Notional Volumes in token units
@@ -241,8 +241,8 @@ type TokenDayData @entity {
   dayData: DayData!
 }
 
-type Clearinghouse @entity {
-  # Clearinghouse contract address
+type OptionSettlementEngine @entity {
+  # OptionSettlementEngine contract address
   id: ID!
 
   # Whether or not fees for protocol are enabled
@@ -251,5 +251,5 @@ type Clearinghouse @entity {
   feeToAddress: Account!
 
   # Daily metrics
-  historicalDayData: [DayData!]! @derivedFrom(field: "clearinghouse")
+  historicalDayData: [DayData!]! @derivedFrom(field: "ose")
 }
