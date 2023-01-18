@@ -24,6 +24,7 @@ type Claim @entity {
   underlyingAmount: BigInt
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type Account @entity {
   id: ID!
   asERC1155: ERC1155Contract
@@ -37,29 +38,36 @@ type Account @entity {
   events: [Event!]! @derivedFrom(field: "emitter")
 }
 
-type ERC1155Contract @entity {
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
+type ERC1155Contract @entity(immutable: true) {
   id: ID!
   asAccount: Account!
   tokens: [ERC1155Token!]! @derivedFrom(field: "contract")
   balances: [ERC1155Balance!]! @derivedFrom(field: "contract")
   operators: [ERC1155Operator!]! @derivedFrom(field: "contract")
   transfers: [ERC1155Transfer!]! @derivedFrom(field: "contract")
-  totalValueLockedUSD: BigDecimal!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Token @entity {
   id: ID!
-  type: Int
-  option: Option
-  claim: Claim
   contract: ERC1155Contract!
   identifier: BigInt!
   uri: String
   totalSupply: ERC1155Balance!
   balances: [ERC1155Balance!]! @derivedFrom(field: "token")
   transfers: [ERC1155Transfer!]! @derivedFrom(field: "token")
+
+  ## Valorem extended ERC-1155Token attributes
+  # 1 = Option; 2 = Claim
+  type: Int
+  # The OptionId if (type == 1)
+  optionType: OptionType
+  # The ClaimId if (type == 2)
+  claim: Claim
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Balance @entity {
   id: ID!
   contract: ERC1155Contract!
@@ -71,6 +79,7 @@ type ERC1155Balance @entity {
   transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "toBalance")
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Operator @entity {
   id: ID!
   contract: ERC1155Contract!
@@ -79,6 +88,7 @@ type ERC1155Operator @entity {
   approved: Boolean!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Transfer implements Event @entity(immutable: true) {
   id: ID!
   emitter: Account!
@@ -95,12 +105,15 @@ type ERC1155Transfer implements Event @entity(immutable: true) {
   valueExact: BigInt!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 interface Event {
   id: ID!
   transaction: Transaction!
   emitter: Account!
   timestamp: BigInt!
 }
+
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type Transaction @entity(immutable: true) {
   id: ID!
   timestamp: BigInt!
