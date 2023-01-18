@@ -189,6 +189,11 @@ type Token @entity {
   # Total number of tokens in Clearinghouse
   totalValueLocked: BigInt!
 
+  # Amount of tokens that are ready to be swept as fees
+  feeBalance: BigInt!
+  # Lifetime sum of tokens paid to Valorem as fees
+  feesAccrued: BigInt!
+
 }
 
 type TokenDayData @entity {
