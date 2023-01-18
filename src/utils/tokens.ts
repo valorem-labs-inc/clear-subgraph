@@ -21,33 +21,41 @@ export function loadOrInitializeToken(address: string): Token {
   return token;
 }
 
-// export function updateDailyTokenMetrics(
-//   token: Token,
-//   event: ethereum.Event
-// ): DailyTokenMetrics {
-//   let timestamp = event.block.timestamp.toI32();
-//   let dayID = timestamp / 86400;
-//   let dayStartTimestamp = dayID * 86400;
+export function loadOrInitializeDailyTokenMetrics(
+  tokenAddress: string,
+  timestamp: BigInt
+): TokenDayData {
+  const day = getBeginningOfDay(timestamp);
+  const dateUnix = BigInt.fromI64(day.getTime());
 
-//   let tokenDayID = token.id
-//     .toString()
-//     .concat("-")
-//     .concat(dayID.toString());
+  let tokenMetrics = TokenDayData.load(`${tokenAddress}-${dateUnix}`);
+  if (tokenMetrics) return tokenMetrics;
 
-//   let DailyTokenMetrics = DailyTokenMetrics.load(tokenDayID);
-//   if (DailyTokenMetrics === null) {
-//     DailyTokenMetrics = new DailyTokenMetrics(tokenDayID);
-//     DailyTokenMetrics.date = dayStartTimestamp;
-//     DailyTokenMetrics.token = token.id;
-//     DailyTokenMetrics.volume = BigDecimal.zero();
-//     DailyTokenMetrics.volumeUSD = BigDecimal.zero();
-//     DailyTokenMetrics.EngineDailyMetrics = dayID.toString();
-//     // DailyTokenMetrics.feesUSD = ZERO_BD
-//   }
+  // init
+  const token = loadOrInitializeToken(tokenAddress);
+  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(timestamp);
 
-//   DailyTokenMetrics.totalValueLocked = token.totalValueLocked;
-//   // DailyTokenMetrics.totalValueLockedUSD = token.totalValueLockedUSD;
-//   DailyTokenMetrics.save();
+  tokenMetrics = new TokenDayData(`${tokenAddress}-${dateUnix}`);
+  tokenMetrics.totalValueLocked = token.totalValueLocked;
+  tokenMetrics.notionalVolWritten = BigInt.fromI32(0);
+  tokenMetrics.notionalVolExercised = BigInt.fromI32(0);
+  tokenMetrics.notionalVolRedeemed = BigInt.fromI32(0);
+  tokenMetrics.notionalVolTransferred = BigInt.fromI32(0);
+  tokenMetrics.notionalVolSum = BigInt.fromI32(0);
+  tokenMetrics.notionalVolSettled = BigInt.fromI32(0);
+  tokenMetrics.notionalVolFeesAccrued = BigInt.fromI32(0);
+  tokenMetrics.notionalVolFeesSwept = BigInt.fromI32(0);
+  tokenMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
+  tokenMetrics.token = token.id;
+  tokenMetrics.dayData = dailyOSEMetrics.id;
+  tokenMetrics.save();
 
-//   return DailyTokenMetrics as DailyTokenMetrics;
-// }
+  return tokenMetrics;
+}
