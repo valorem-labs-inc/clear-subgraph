@@ -22,7 +22,7 @@ type OptionType @entity {
   # The amount of ERC-1155 options exercised for this OptionType
   amountExercised: BigInt!
 
-  # Claims that belong to this OptionType
+  # Claims which collateralize this type of option
   claims: [Claim!]!
 }
 
