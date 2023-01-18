@@ -1,6 +1,7 @@
 import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
+import { getBeginningOfDay, loadOrInitializeDailyOSEMetrics } from ".";
 import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
-import { Token, DailyTokenMetrics } from "../../generated/schema";
+import { Token, TokenDayData } from "../../generated/schema";
 
 export function loadOrInitializeToken(address: string): Token {
   let token = Token.load(address);
@@ -13,7 +14,7 @@ export function loadOrInitializeToken(address: string): Token {
   token.name = tokenContract.name();
   token.decimals = tokenContract.decimals();
 
-  token.tvl = BigInt.fromI32(0);
+  token.totalValueLocked = BigInt.fromI32(0);
   token.feesAccrued = BigInt.fromI32(0);
 
   token.save();

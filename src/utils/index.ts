@@ -1,24 +1,11 @@
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
-  Address,
-  BigDecimal,
-  BigInt,
-  ethereum,
-  store,
-} from "@graphprotocol/graph-ts";
-import {
-  // ERC1155Contract,
-  // OptionSettlementEngine,
-  // EngineDailyMetrics,
   Transaction,
   Account,
-  Token,
   OptionSettlementEngine as OSE,
-  // DailyTokenMetrics,
-  DailyTokenMetrics,
-  DailyOSEMetrics,
+  DayData,
 } from "../../generated/schema";
 import { OptionSettlementEngine } from "../../generated/OptionSettlementEngine/OptionSettlementEngine";
-import { loadOrInitializeToken } from "./tokens";
 
 export * from "./tokens";
 
