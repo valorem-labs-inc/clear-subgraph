@@ -159,7 +159,7 @@ type DecimalValue @entity {
   decimals: Int!
 }
 
-type ClearinghouseDayData @entity {
+type DayData @entity {
   # Timestamp of day at 00:00AM UTC
   id: ID!
   # Timestamp of day at 00:00AM UTC
@@ -181,7 +181,7 @@ type ClearinghouseDayData @entity {
   # Clearinghouse pointer
   clearinghouse: Clearinghouse!
   # Metrics for each Token on same day
-  tokenDayDatas: [TokenDayData!]! @derivedFrom(field: "clearinghouseDayData")
+  tokenDayData: [TokenDayData!]! @derivedFrom(field: "dayData")
 }
 
 type Token @entity {
@@ -202,7 +202,7 @@ type Token @entity {
   feesAccrued: BigInt!
 
   # Daily metrics (tvl, volume, etc) for the token
-  tokenDayDatas: [TokenDayData!]! @derivedFrom(field: "token")
+  tokenDayData: [TokenDayData!]! @derivedFrom(field: "token")
 }
 
 type TokenDayData @entity {
@@ -237,8 +237,8 @@ type TokenDayData @entity {
   notionalVolFeesAccruedUSD: BigDecimal!
   notionalVolFeesSweptUSD: BigDecimal!
 
-  # Pointer to ClearinghouseDayData for same day
-  clearinghouseDayData: ClearinghouseDayData!
+  # Pointer to DayData for same day
+  dayData: DayData!
 }
 
 type Clearinghouse @entity {
@@ -251,6 +251,5 @@ type Clearinghouse @entity {
   feeToAddress: Account!
 
   # Daily metrics
-  clearinghouseDayDatas: [ClearinghouseDayData!]!
-    @derivedFrom(field: "clearinghouse")
+  historicalDayData: [DayData!]! @derivedFrom(field: "clearinghouse")
 }
