@@ -368,7 +368,27 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   dailyOSEMetrics.save();
 }
 
+// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferSingle(event: TransferSingleEvent): void {
+  let contract = fetchERC1155(event.address.toHexString());
+  let operator = fetchAccount(event.params.operator.toHexString());
+  let from = fetchAccount(event.params.from.toHexString());
+  let to = fetchAccount(event.params.to.toHexString());
+
+  registerTransfer(
+    event,
+    "",
+    contract,
+    operator,
+    from,
+    to,
+    event.params.id,
+    event.params.amount
+  );
+
+  /**
+   * Valorem Extension
+   */
   // get params
   const fromAddress = event.params.from.toHexString();
   const toAddress = event.params.to.toHexString();
@@ -393,6 +413,33 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
 
 // https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferBatch(event: TransferBatchEvent): void {
+  const contract = fetchERC1155(event.address.toHexString());
+  const operator = fetchAccount(event.params.operator.toHexString());
+  const from = fetchAccount(event.params.from.toHexString());
+  const to = fetchAccount(event.params.to.toHexString());
+  const ids = event.params.ids;
+  const amounts = event.params.amounts;
+  // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
+  // sens of what is happening. Don't try to make something out of stupid code, and just throw the event. This
+  // contract doesn't follow the standard anyway.
+  if (ids.length == amounts.length) {
+    for (let i = 0; i < ids.length; ++i) {
+      registerTransfer(
+        event,
+        "/".concat(i.toString()),
+        contract,
+        operator,
+        from,
+        to,
+        ids[i],
+        amounts[i]
+      );
+    }
+  }
+
+  /**
+   * Valorem Extension
+   */
   // get params
   const fromAddress = event.params.from.toHexString();
   const toAddress = event.params.to.toHexString();
@@ -432,11 +479,108 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   // try to find option or claim (s), then update their owners
 }
 
-export function handleApprovalForAll(event: ApprovalForAllEvent): void {}
+// https://github.com/OpenZeppelin/openzeppelin-subgraphs
+export function handleApprovalForAll(event: ApprovalForAllEvent): void {
+  let contract = fetchERC1155(event.address.toHexString());
+  let owner = fetchAccount(event.params.owner.toHexString());
+  let operator = fetchAccount(event.params.operator.toHexString());
+  let delegation = fetchERC1155Operator(contract, owner, operator);
+  delegation.approved = event.params.approved;
+  delegation.save();
+}
 
+// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleURI(event: URIEvent): void {
-  // let contract = fetchERC1155(event.address);
-  // let token = fetchERC1155Token(contract, event.params.id);
-  // token.uri = replaceURI(event.params.value, event.params.id);
-  // token.save();
+  let contract = fetchERC1155(event.address.toHexString());
+  let token = fetchERC1155Token(contract, event.params.id);
+  token.uri = replaceURI(event.params.value, event.params.id);
+  token.save();
+}
+
+// https://github.com/OpenZeppelin/openzeppelin-subgraphs
+function registerTransfer(
+  event: ethereum.Event,
+  suffix: string,
+  contract: ERC1155Contract,
+  operator: Account,
+  from: Account,
+  to: Account,
+  id: BigInt,
+  value: BigInt
+): void {
+  let token = fetchERC1155Token(contract, id);
+  let ev = new ERC1155Transfer(
+    event.block.number
+      .toString()
+      .concat("-")
+      .concat(event.logIndex.toString())
+      .concat(suffix)
+  );
+  ev.emitter = token.contract;
+  ev.transaction = event.block.number
+    .toString()
+    .concat("-")
+    .concat(event.logIndex.toString());
+  ev.timestamp = event.block.timestamp;
+  ev.contract = contract.id;
+  ev.token = token.id;
+  ev.operator = operator.id;
+  ev.value = value.toBigDecimal();
+  ev.valueExact = value;
+
+  if (from.id == Address.zero().toHexString()) {
+    let totalSupply = fetchERC1155Balance(token, null);
+    totalSupply.valueExact = totalSupply.valueExact.plus(value);
+    totalSupply.value = totalSupply.valueExact.toBigDecimal();
+    totalSupply.save();
+  } else {
+    let balance = fetchERC1155Balance(token, from);
+    balance.valueExact = balance.valueExact.minus(value);
+    balance.value = balance.valueExact.toBigDecimal();
+    balance.save();
+
+    ev.from = from.id;
+    ev.fromBalance = balance.id;
+  }
+
+  if (to.id == Address.zero().toHexString()) {
+    let totalSupply = fetchERC1155Balance(token, null);
+    totalSupply.valueExact = totalSupply.valueExact.minus(value);
+    totalSupply.value = totalSupply.valueExact.toBigDecimal();
+    totalSupply.save();
+  } else {
+    let balance = fetchERC1155Balance(token, to);
+    balance.valueExact = balance.valueExact.plus(value);
+    balance.value = balance.valueExact.toBigDecimal();
+    balance.save();
+
+    ev.to = to.id;
+    ev.toBalance = balance.id;
+  }
+
+  token.save();
+  ev.save();
+
+  /**
+   * Valorem Extension
+   */
+  if (!token.optionType && !token.claim) {
+    // bind to OptionSettlementEngine to call view functions
+    const ose = OSEContract.bind(Address.fromBytes(event.address));
+    // get type of Token
+    const tokenType = ose.tokenType(id);
+
+    // option transfer
+    if (tokenType == 1) {
+      token.type = 1;
+      token.optionType = id.toString();
+    }
+    // claim transfer
+    if (tokenType == 2) {
+      token.type = 2;
+      token.claim = id.toString();
+    }
+
+    token.save();
+  }
 }
