@@ -1,9 +1,9 @@
 import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { getBeginningOfDay, loadOrInitializeDailyOSEMetrics } from ".";
+import { getBeginningOfDay, fetchDailyOSEMetrics } from ".";
 import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
 import { Token, TokenDayData } from "../../generated/schema";
 
-export function loadOrInitializeToken(address: string): Token {
+export function fetchToken(address: string): Token {
   let token = Token.load(address);
   if (token) return token;
 
@@ -22,7 +22,7 @@ export function loadOrInitializeToken(address: string): Token {
   return token;
 }
 
-export function loadOrInitializeDailyTokenMetrics(
+export function fetchDailyTokenMetrics(
   tokenAddress: string,
   timestamp: BigInt
 ): TokenDayData {
@@ -33,8 +33,8 @@ export function loadOrInitializeDailyTokenMetrics(
   if (tokenMetrics) return tokenMetrics;
 
   // init
-  const token = loadOrInitializeToken(tokenAddress);
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(timestamp);
+  const token = fetchToken(tokenAddress);
+  const dailyOSEMetrics = fetchDailyOSEMetrics(timestamp);
 
   tokenMetrics = new TokenDayData(`${tokenAddress}-${dateUnix}`);
   tokenMetrics.totalValueLocked = token.totalValueLocked;

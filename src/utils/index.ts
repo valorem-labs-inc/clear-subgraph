@@ -10,7 +10,7 @@ import { OptionSettlementEngine } from "../../generated/OptionSettlementEngine/O
 export * from "./tokens";
 
 // Retrieves or creates a daily data entity for tracking Volume and TVL.
-export function loadOrInitializeDailyOSEMetrics(timestamp: BigInt): DayData {
+export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   const day = getBeginningOfDay(timestamp);
   const dateUnix = BigInt.fromI64(day.getTime());
 
@@ -32,9 +32,7 @@ export function loadOrInitializeDailyOSEMetrics(timestamp: BigInt): DayData {
   return dailyOSEMetrics;
 }
 
-export function loadOrInitializeOptionSettlementEngine(
-  contractAddress: string
-): OSE {
+export function fetchOptionSettlementEngine(contractAddress: string): OSE {
   let ose = OSE.load(contractAddress);
 
   if (ose === null) {
@@ -51,7 +49,7 @@ export function loadOrInitializeOptionSettlementEngine(
   return ose;
 }
 
-export function loadOrInitializeTransaction(txHash: string): Transaction {
+export function fetchTransaction(txHash: string): Transaction {
   let tx = Transaction.load(txHash);
   if (tx) return tx;
 

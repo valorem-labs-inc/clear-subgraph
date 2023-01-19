@@ -16,13 +16,13 @@ import { OptionType, Option, Claim } from "../generated/schema";
 import { exponentToBigDecimal, getTokenPriceUSD } from "./utils/price";
 import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
 import {
-  loadOrInitializeOptionSettlementEngine,
-  loadOrInitializeToken,
-  loadOrInitializeTransaction,
-  loadOrInitializeAccount,
+  fetchOptionSettlementEngine,
+  fetchToken,
+  fetchTransaction,
+  fetchAccount,
   checkForDuplicateTransferSingleOrBatch,
-  loadOrInitializeDailyTokenMetrics,
-  loadOrInitializeDailyOSEMetrics,
+  fetchDailyTokenMetrics,
+  fetchDailyOSEMetrics,
 } from "./utils";
 import { BigInt, log } from "@graphprotocol/graph-ts";
 import { ZERO_ADDRESS } from "./utils/constants";
@@ -43,8 +43,8 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   const tx = checkForDuplicateTransferSingleOrBatch(txHash);
 
   // get entities
-  const underlyingToken = loadOrInitializeToken(underlyingAddress);
-  const exerciseToken = loadOrInitializeToken(exerciseAddress);
+  const underlyingToken = fetchToken(underlyingAddress);
+  const exerciseToken = fetchToken(exerciseAddress);
   const creator = fetchAccount(creatorAddress);
 
   // initialize new OptionType
@@ -74,7 +74,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
 
   // get entities
   const optionType = OptionType.load(optionId)!;
-  const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
+  const underlyingToken = fetchToken(optionType.underlyingAsset);
   const writer = fetchAccount(writerAddress);
 
   // initialize new Claim
@@ -120,7 +120,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   underlyingToken.save();
 
   // update token metrics
-  const underlyingDaily = loadOrInitializeDailyTokenMetrics(
+  const underlyingDaily = fetchDailyTokenMetrics(
     underlyingToken.id,
     event.block.timestamp
   );
@@ -146,9 +146,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   underlyingDaily.save();
 
   // update OSE metrics
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(
-    event.block.timestamp
-  );
+  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
   dailyOSEMetrics.notionalVolWrittenUSD = dailyOSEMetrics.notionalVolWrittenUSD.plus(
     underlyingTotalUSD
   );
@@ -170,8 +168,8 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
 
   // get entities
   const optionType = OptionType.load(optionId)!;
-  const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
-  const exerciseToken = loadOrInitializeToken(optionType.underlyingAsset);
+  const underlyingToken = fetchToken(optionType.underlyingAsset);
+  const exerciseToken = fetchToken(optionType.underlyingAsset);
   const exerciser = fetchAccount(exerciserAddress);
 
   // Delete any ERC1155 transfers that were created in the same txHash
@@ -226,7 +224,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   exerciseToken.save();
 
   // update token metrics
-  const underlyingDaily = loadOrInitializeDailyTokenMetrics(
+  const underlyingDaily = fetchDailyTokenMetrics(
     underlyingToken.id,
     event.block.timestamp
   );
@@ -251,7 +249,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   );
   underlyingDaily.save();
 
-  const exerciseDaily = loadOrInitializeDailyTokenMetrics(
+  const exerciseDaily = fetchDailyTokenMetrics(
     exerciseToken.id,
     event.block.timestamp
   );
@@ -277,9 +275,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   exerciseDaily.save();
 
   // update OSE metrics
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(
-    event.block.timestamp
-  );
+  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
   dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
     underlyingTotalUSD.plus(exerciseTotalUSD)
   );
@@ -304,8 +300,8 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   // get entities
   const optionType = OptionType.load(optionId)!;
   const claim = Claim.load(claimId)!;
-  const underlyingToken = loadOrInitializeToken(optionType.underlyingAsset);
-  const exerciseToken = loadOrInitializeToken(optionType.underlyingAsset);
+  const underlyingToken = fetchToken(optionType.underlyingAsset);
+  const exerciseToken = fetchToken(optionType.underlyingAsset);
   const redeemer = fetchAccount(redeemerAddress);
 
   // Delete any ERC1155 transfers that were created in the same txHash
@@ -335,7 +331,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   exerciseToken.save();
 
   // update token metrics
-  const underlyingDaily = loadOrInitializeDailyTokenMetrics(
+  const underlyingDaily = fetchDailyTokenMetrics(
     underlyingToken.id,
     event.block.timestamp
   );
@@ -354,7 +350,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   );
   underlyingDaily.save();
 
-  const exerciseDaily = loadOrInitializeDailyTokenMetrics(
+  const exerciseDaily = fetchDailyTokenMetrics(
     exerciseToken.id,
     event.block.timestamp
   );
@@ -380,9 +376,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   exerciseDaily.save();
 
   // update OSE metrics
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(
-    event.block.timestamp
-  );
+  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
   dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
     underlyingTotalUSD.plus(exerciseTotalUSD)
   );
@@ -399,9 +393,7 @@ export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
   let isEnabled = event.params.enabled;
   let feeTo = event.params.feeTo.toHexString();
 
-  let feeSwitch = loadOrInitializeOptionSettlementEngine(
-    event.address.toHexString()
-  );
+  let feeSwitch = fetchOptionSettlementEngine(event.address.toHexString());
   feeSwitch.feesEnabled = isEnabled;
   feeSwitch.feeToAddress = feeTo;
   feeSwitch.save();
@@ -410,9 +402,7 @@ export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
 export function handleFeeToUpdated(event: FeeToUpdatedEvent): void {
   let newFeeTo = event.params.newFeeTo.toHexString();
 
-  let feeSwitch = loadOrInitializeOptionSettlementEngine(
-    event.address.toHexString()
-  );
+  let feeSwitch = fetchOptionSettlementEngine(event.address.toHexString());
   feeSwitch.feeToAddress = newFeeTo;
   feeSwitch.save();
 }
@@ -426,7 +416,7 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
-  const tokenDaily = loadOrInitializeDailyTokenMetrics(
+  const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
   );
@@ -438,9 +428,7 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   );
   tokenDaily.save();
 
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(
-    event.block.timestamp
-  );
+  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
   dailyOSEMetrics.notionalVolFeesAccruedUSD = dailyOSEMetrics.notionalVolFeesAccruedUSD.plus(
     feeValueUSD
   );
@@ -456,7 +444,7 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
-  const tokenDaily = loadOrInitializeDailyTokenMetrics(
+  const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
   );
@@ -468,9 +456,7 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   );
   tokenDaily.save();
 
-  const dailyOSEMetrics = loadOrInitializeDailyOSEMetrics(
-    event.block.timestamp
-  );
+  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
   dailyOSEMetrics.notionalVolFeesSweptUSD = dailyOSEMetrics.notionalVolFeesSweptUSD.plus(
     feeValueUSD
   );
