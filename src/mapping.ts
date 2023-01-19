@@ -115,44 +115,14 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   );
   underlyingToken.save();
 
-  // update token metrics
-  const underlyingDaily = fetchDailyTokenMetrics(
-    underlyingToken.id,
-    event.block.timestamp
+  // update metrics
+  handleDailyMetrics(
+    "write",
+    event.block.timestamp,
+    optionType,
+    numberOfOptions,
+    null
   );
-  underlyingDaily.tvl = underlyingDaily.tvl.plus(underlyingAmtTotal);
-  underlyingDaily.notionalVolWritten = underlyingDaily.notionalVolWritten.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolSettled = underlyingDaily.notionalVolSettled.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolWrittenUSD = underlyingDaily.notionalVolWrittenUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.notionalVolSettledUSD = underlyingDaily.notionalVolSettledUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.save();
-
-  // update OSE metrics
-  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolWrittenUSD = dailyOSEMetrics.notionalVolWrittenUSD.plus(
-    underlyingTotalUSD
-  );
-  dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
-    underlyingTotalUSD
-  );
-  dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
-    underlyingTotalUSD
-  );
-  dailyOSEMetrics.save();
 }
 
 export function handleOptionsExercised(event: OptionsExercisedEvent): void {
@@ -183,14 +153,14 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   underlyingToken.save();
   exerciseToken.save();
 
+  // update metrics
+  handleDailyMetrics(
+    "exercise",
+    event.block.timestamp,
+    optionType,
+    numberOfOptions,
+    null
   );
-  dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
-  );
-  dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
-  );
-  dailyOSEMetrics.save();
 }
 
 export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
@@ -227,63 +197,18 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   underlyingToken.save();
   exerciseToken.save();
 
-  // update token metrics
-  const underlyingDaily = fetchDailyTokenMetrics(
-    underlyingToken.id,
-    event.block.timestamp
-  );
-  underlyingDaily.tvl = underlyingDaily.tvl.minus(underlyingAmountRedeemed);
-  underlyingDaily.notionalVolRedeemed = underlyingDaily.notionalVolRedeemed.plus(
-    underlyingAmountRedeemed
-  );
-  underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
-    underlyingAmountRedeemed
-  );
-  underlyingDaily.notionalVolRedeemedUSD = underlyingDaily.notionalVolRedeemedUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.save();
+  let redeemAmounts = new RedeemOrTransferAmounts();
+  redeemAmounts.underlyingAmountTotal = underlyingAmountRedeemed;
+  redeemAmounts.exerciseAmountTotal = exerciseAmountRedeemed;
 
-  const exerciseDaily = fetchDailyTokenMetrics(
-    exerciseToken.id,
-    event.block.timestamp
+  // update metrics
+  handleDailyMetrics(
+    "redeem",
+    event.block.timestamp,
+    optionType,
+    BigInt.fromI32(0),
+    redeemAmounts
   );
-  exerciseDaily.tvl = exerciseDaily.tvl.plus(exerciseAmountRedeemed);
-  exerciseDaily.notionalVolExercised = exerciseDaily.notionalVolExercised.plus(
-    exerciseAmountRedeemed
-  );
-  exerciseDaily.notionalVolSettled = exerciseDaily.notionalVolSettled.plus(
-    exerciseAmountRedeemed
-  );
-  exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
-    exerciseAmountRedeemed
-  );
-  exerciseDaily.notionalVolExercisedUSD = exerciseDaily.notionalVolExercisedUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.notionalVolSettledUSD = exerciseDaily.notionalVolSettledUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.save();
-
-  // update OSE metrics
-  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
-  );
-  dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
-  );
-  dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
-  );
-  dailyOSEMetrics.save();
 }
 
 export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
