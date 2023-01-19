@@ -466,17 +466,50 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
     }
   }
 }
+
+// Valorem Specific
+function handleERC1155TransferMetrics(
+  tokenId: BigInt,
+  amount: BigInt,
+  event: ethereum.Event,
+  tokenType: number
+): void {
+  // load entities for calculating metrics
+  const optionType = OptionType.load(tokenId.toString())!;
+
+  let transferAmounts = new RedeemOrTransferAmounts();
+
+  // if option was transferred only update underlying token's metrics
+  if (tokenType == 1) {
+    const underlyingAmountTotal = optionType.underlyingAmount.times(amount);
+    transferAmounts.underlyingAmountTotal = underlyingAmountTotal;
   }
 
-  const optionId = event.params.ids[0];
-  const optionQty = event.params.amounts[0];
-  const claimId = event.params.ids[1];
-  const claimQty = event.params.amounts[1];
-  log.warning("unhandled Transfer Batch; to:{}, from:{}", [
-    toAddress,
-    fromAddress,
-  ]);
-  // try to find option or claim (s), then update their owners
+  // if claim was transferred update underlying and exercise tokens' metrics
+  if (tokenType == 2) {
+    // get ratio of corresponding options written/exercised
+    const ose = OSEContract.bind(Address.fromBytes(event.address));
+    const claimStruct = ose.claim(tokenId);
+    const amountWritten = claimStruct.amountWritten;
+    const amountExercised = claimStruct.amountExercised;
+
+    transferAmounts.underlyingAmountTotal = optionType.underlyingAmount.times(
+      amountWritten.minus(amountExercised)
+    );
+
+    transferAmounts.exerciseAmountTotal = optionType.exerciseAmount.times(
+      amountExercised
+    );
+  }
+
+  // update metrics
+  handleDailyMetrics(
+    "transfer",
+    event.block.timestamp,
+    optionType,
+    BigInt.fromI32(1),
+    transferAmounts
+  );
 }
 
 // https://github.com/OpenZeppelin/openzeppelin-subgraphs
