@@ -37,9 +37,30 @@ export function fetchDailyTokenMetrics(
   const token = fetchToken(tokenAddress);
   const dailyOSEMetrics = fetchDailyOSEMetrics(timestamp);
 
+  // find the last recorded day metrics to carry over TVL USD
+  let lastDayData: TokenDayData | null = null;
+  for (let i = 1; i < 31; i++) {
+    const previousDayStart = getBeginningOfDayInSeconds(
+      timestamp.minus(BigInt.fromI32(i).times(SECONDS_IN_DAY))
+    );
+
+    const previousDaysMetrics = TokenDayData.load(
+      `${tokenAddress}-${previousDayStart.toString()}`
+    );
+
+    if (previousDaysMetrics != null) {
+      // set variable and break search loop
+      lastDayData = previousDaysMetrics;
+      break;
+    }
+  }
+
   tokenMetrics = new TokenDayData(`${tokenAddress}-${dayStart.toString()}`);
   tokenMetrics.date = dayStart.toI32();
   tokenMetrics.totalValueLocked = token.totalValueLocked;
+  tokenMetrics.totalValueLockedUSD = lastDayData
+    ? lastDayData.totalValueLockedUSD
+    : BigDecimal.fromString("0"); // init with 0 for first event after contract deployment
   tokenMetrics.notionalVolWritten = BigInt.fromI32(0);
   tokenMetrics.notionalVolExercised = BigInt.fromI32(0);
   tokenMetrics.notionalVolRedeemed = BigInt.fromI32(0);

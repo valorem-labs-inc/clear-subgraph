@@ -1,13 +1,17 @@
-import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 import {
   Transaction,
-  Account,
   OptionSettlementEngine as OSE,
   DayData,
+  OptionType,
 } from "../../generated/schema";
 import { OptionSettlementEngine } from "../../generated/OptionSettlementEngine/OptionSettlementEngine";
+import { fetchDailyTokenMetrics, fetchToken } from "./tokens";
+import { exponentToBigDecimal, getTokenPriceUSD } from "./price";
 
 export * from "./tokens";
+export * from "./constants";
+export * from "./price";
 
 // Retrieves or creates a daily data entity for tracking Volume and TVL.
 export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
@@ -19,6 +23,26 @@ export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   // init
   dailyOSEMetrics = new DayData(dayStart.toString());
   dailyOSEMetrics.date = dayStart.toI32();
+
+  // find the last recorded day metrics to carry over TVL USD
+  let lastDayData: DayData | null = null;
+  for (let i = 1; i < 31; i++) {
+    const previousDayStart = getBeginningOfDayInSeconds(
+      timestamp.minus(BigInt.fromI32(i).times(SECONDS_IN_DAY))
+    );
+
+    const previousDaysMetrics = DayData.load(previousDayStart.toString());
+
+    if (previousDaysMetrics != null) {
+      // set variable and break search loop
+      lastDayData = previousDaysMetrics;
+      break;
+    }
+  }
+
+  dailyOSEMetrics.totalValueLockedUSD = lastDayData
+    ? lastDayData.totalValueLockedUSD
+    : BigDecimal.fromString("0"); // init with 0 for first event after contract deployment
   dailyOSEMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
