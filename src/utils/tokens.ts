@@ -15,6 +15,7 @@ export function fetchToken(address: string): Token {
   token.decimals = tokenContract.decimals();
 
   token.totalValueLocked = BigInt.fromI32(0);
+  token.feeBalance = BigInt.fromI32(0);
   token.feesAccrued = BigInt.fromI32(0);
 
   token.save();
