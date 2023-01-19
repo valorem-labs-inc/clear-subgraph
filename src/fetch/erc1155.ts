@@ -16,7 +16,13 @@ import { constants } from "../constants";
 import { fetchAccount } from "../fetch/account";
 
 export function replaceURI(uri: string, identifier: BigInt): string {
-  return uri.replaceAll("{id}", identifier.toHex().slice(2).padStart(64, "0"));
+  return uri.replaceAll(
+    "{id}",
+    identifier
+      .toHex()
+      .slice(2)
+      .padStart(64, "0")
+  );
 }
 
 export function fetchERC1155(address: string): ERC1155Contract {
