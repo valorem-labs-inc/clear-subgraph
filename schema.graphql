@@ -109,6 +109,9 @@ type ERC1155Operator @entity {
   id: ID!
   contract: ERC1155Contract!
   owner: Account!
+  operator: Account!
+  approved: Boolean!
+}
 
 # https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Transfer implements Event @entity(immutable: true) {
