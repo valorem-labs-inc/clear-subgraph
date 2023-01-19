@@ -1,4 +1,15 @@
+import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
+
 import {
+  OptionType,
+  Claim,
+  Account,
+  ERC1155Contract,
+  ERC1155Transfer,
+} from "../generated/schema";
+
+import {
+  OptionSettlementEngine as OSEContract,
   ApprovalForAll as ApprovalForAllEvent,
   ClaimRedeemed as ClaimRedeemedEvent,
   FeeAccrued as FeeAccruedEvent,
@@ -12,20 +23,29 @@ import {
   FeeToUpdated as FeeToUpdatedEvent,
   FeeSwitchUpdated as FeeSwitchUpdatedEvent,
 } from "../generated/OptionSettlementEngine/OptionSettlementEngine";
-import { OptionType, Option, Claim } from "../generated/schema";
-import { exponentToBigDecimal, getTokenPriceUSD } from "./utils/price";
-import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
+
+import { fetchAccount } from "./fetch/account";
+import {
+  fetchERC1155,
+  fetchERC1155Balance,
+  fetchERC1155Operator,
+  fetchERC1155Token,
+  replaceURI,
+} from "./fetch/erc1155";
+
 import {
   fetchOptionSettlementEngine,
   fetchToken,
-  fetchTransaction,
-  fetchAccount,
-  checkForDuplicateTransferSingleOrBatch,
   fetchDailyTokenMetrics,
   fetchDailyOSEMetrics,
+  handleDailyMetrics,
+  RedeemOrTransferAmounts,
+  exponentToBigDecimal,
+  getTokenPriceUSD,
+  ZERO_ADDRESS,
 } from "./utils";
-import { BigInt, log } from "@graphprotocol/graph-ts";
-import { ZERO_ADDRESS } from "./utils/constants";
+
+import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
 
 export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get params

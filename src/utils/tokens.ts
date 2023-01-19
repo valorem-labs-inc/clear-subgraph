@@ -1,7 +1,13 @@
-import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { getBeginningOfDay, fetchDailyOSEMetrics } from ".";
-import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import {
+  getBeginningOfDayInSeconds,
+  fetchDailyOSEMetrics,
+  SECONDS_IN_DAY,
+} from ".";
+
 import { Token, TokenDayData } from "../../generated/schema";
+
+import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
 
 export function fetchToken(address: string): Token {
   let token = Token.load(address);
