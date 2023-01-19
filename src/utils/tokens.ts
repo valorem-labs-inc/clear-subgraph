@@ -26,17 +26,19 @@ export function fetchDailyTokenMetrics(
   tokenAddress: string,
   timestamp: BigInt
 ): TokenDayData {
-  const day = getBeginningOfDay(timestamp);
-  const dateUnix = BigInt.fromI64(day.getTime());
-
-  let tokenMetrics = TokenDayData.load(`${tokenAddress}-${dateUnix}`);
+  // find
+  const dayStart = getBeginningOfDayInSeconds(timestamp);
+  let tokenMetrics = TokenDayData.load(
+    `${tokenAddress}-${dayStart.toString()}`
+  );
   if (tokenMetrics) return tokenMetrics;
 
   // init
   const token = fetchToken(tokenAddress);
   const dailyOSEMetrics = fetchDailyOSEMetrics(timestamp);
 
-  tokenMetrics = new TokenDayData(`${tokenAddress}-${dateUnix}`);
+  tokenMetrics = new TokenDayData(`${tokenAddress}-${dayStart.toString()}`);
+  tokenMetrics.date = dayStart.toI32();
   tokenMetrics.totalValueLocked = token.totalValueLocked;
   tokenMetrics.notionalVolWritten = BigInt.fromI32(0);
   tokenMetrics.notionalVolExercised = BigInt.fromI32(0);

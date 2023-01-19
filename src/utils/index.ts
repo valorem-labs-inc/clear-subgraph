@@ -11,14 +11,14 @@ export * from "./tokens";
 
 // Retrieves or creates a daily data entity for tracking Volume and TVL.
 export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
-  const day = getBeginningOfDay(timestamp);
-  const dateUnix = BigInt.fromI64(day.getTime());
-
-  let dailyOSEMetrics = DayData.load(dateUnix.toString());
+  // find
+  const dayStart = getBeginningOfDayInSeconds(timestamp);
+  let dailyOSEMetrics = DayData.load(dayStart.toString());
   if (dailyOSEMetrics) return dailyOSEMetrics;
 
   // init
-  dailyOSEMetrics = new DayData(dateUnix.toString());
+  dailyOSEMetrics = new DayData(dayStart.toString());
+  dailyOSEMetrics.date = dayStart.toI32();
   dailyOSEMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
@@ -59,8 +59,10 @@ export function fetchTransaction(txHash: string): Transaction {
   return tx;
 }
 
-export function getBeginningOfDay(timestamp: BigInt): Date {
-  const dayStartTimestamp = (timestamp.toI32() / 86400) * 86400;
-  const dayStartMilliseconds = dayStartTimestamp * 1000;
-  return new Date(dayStartMilliseconds);
+export const SECONDS_IN_DAY = BigInt.fromI32(86400);
+
+export function getBeginningOfDayInSeconds(timestamp: BigInt): BigInt {
+  return timestamp.div(SECONDS_IN_DAY).times(SECONDS_IN_DAY);
+}
+
 }
