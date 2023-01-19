@@ -19,7 +19,7 @@ export function replaceURI(uri: string, identifier: BigInt): string {
   return uri.replaceAll("{id}", identifier.toHex().slice(2).padStart(64, "0"));
 }
 
-export function fetchERC1155(address: Address): ERC1155Contract {
+export function fetchERC1155(address: string): ERC1155Contract {
   let account = fetchAccount(address);
   let contract = ERC1155Contract.load(account.id);
 
@@ -76,7 +76,7 @@ export function fetchERC1155Balance(
   return balance as ERC1155Balance;
 }
 
-export function fetchERC721Operator(
+export function fetchERC1155Operator(
   contract: ERC1155Contract,
   owner: Account,
   operator: Account
