@@ -59,9 +59,6 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   const creatorAddress = event.transaction.from.toHexString();
   const txHash = event.transaction.hash.toHexString();
 
-  // Delete any ERC1155 transfers that were created in the same txHash
-  const tx = checkForDuplicateTransferSingleOrBatch(txHash);
-
   // get entities
   const underlyingToken = fetchToken(underlyingAddress);
   const exerciseToken = fetchToken(exerciseAddress);
@@ -70,14 +67,15 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // initialize new OptionType
   const optionType = new OptionType(optionId);
   optionType.creator = creator.id;
-  optionType.createdTx = txHash;
+  optionType.createTx = txHash;
   optionType.exerciseTimestamp = exerciseTimestamp;
   optionType.expiryTimestamp = expiryTimestamp;
   optionType.underlyingAsset = underlyingToken.id;
   optionType.underlyingAmount = underlyingAmount;
   optionType.exerciseAsset = exerciseToken.id;
   optionType.exerciseAmount = exerciseAmount;
-  optionType.optionSupply = BigInt.fromI32(0);
+  optionType.amountWritten = BigInt.fromI32(0);
+  optionType.claims = new Array<string>();
   optionType.save();
 }
 
@@ -89,9 +87,6 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   const writerAddress = event.params.writer.toHexString();
   const txHash = event.transaction.hash.toHexString();
 
-  // Delete any ERC1155 transfers that were created in the same txHash
-  const tx = checkForDuplicateTransferSingleOrBatch(txHash);
-
   // get entities
   const optionType = OptionType.load(optionId)!;
   const underlyingToken = fetchToken(optionType.underlyingAsset);
@@ -100,43 +95,24 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   // initialize new Claim
   const claim = new Claim(claimId);
   claim.writer = writer.id;
-  claim.createdTx = tx.id;
-  claim.optionsWritten = numberOfOptions;
-  claim.optionsExercised = BigInt.fromI32(0);
+  claim.writeTx = txHash;
+  claim.amountWritten = numberOfOptions;
   claim.redeemed = false;
-  claim.owner = writer.id;
+  claim.optionType = optionType.id;
   claim.save();
 
-  // initialize new Option(s)
-  for (let i = 0; i < numberOfOptions.toI32(); i++) {
-    // update OptionType Supply
-    optionType.optionSupply = optionType.optionSupply.plus(BigInt.fromI32(1));
-    optionType.save();
-
-    const option = new Option(`${optionId}-${optionType.optionSupply}`);
-    option.writer = writer.id;
-    option.createdTx = tx.id;
-    option.exercised = false;
-    option.owner = writer.id;
-    option.optionType = optionType.id;
-    option.claim = claim.id;
-    option.save();
-
-    let writerOptionIDsOwned = writer.optionIDsOwned;
-    writerOptionIDsOwned.push(`${option.id}`);
-    writer.optionIDsOwned = writerOptionIDsOwned;
-    writer.save();
-  }
-
-  // get asset market prices
-  const underlyingPriceUSD = getTokenPriceUSD(underlyingToken.id);
-  const underlyingAmtTotal = optionType.underlyingAmount.times(numberOfOptions);
-  const underlyingTotalUSD = underlyingPriceUSD.times(
-    underlyingAmtTotal.toBigDecimal()
-  );
+  // add this claim to OptionType's claim pointer
+  const claimsWritten = optionType.claims;
+  claimsWritten.push(claimId);
+  optionType.claims = claimsWritten;
+  optionType.amountWritten = optionType.amountWritten.plus(numberOfOptions);
+  optionType.save();
 
   // update token TVL
-  underlyingToken.tvl = underlyingToken.tvl.plus(underlyingAmtTotal);
+  const underlyingAmtTotal = optionType.underlyingAmount.times(numberOfOptions);
+  underlyingToken.totalValueLocked = underlyingToken.totalValueLocked.plus(
+    underlyingAmtTotal
+  );
   underlyingToken.save();
 
   // update token metrics
@@ -183,121 +159,30 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   // get params
   const optionId = event.params.optionId.toString();
   const numberOfOptions = event.params.amount;
-  const exerciserAddress = event.params.exerciser.toHexString();
-  const txHash = event.transaction.hash.toHexString();
 
   // get entities
   const optionType = OptionType.load(optionId)!;
   const underlyingToken = fetchToken(optionType.underlyingAsset);
-  const exerciseToken = fetchToken(optionType.underlyingAsset);
-  const exerciser = fetchAccount(exerciserAddress);
+  const exerciseToken = fetchToken(optionType.exerciseAsset);
 
-  // Delete any ERC1155 transfers that were created in the same txHash
-  const tx = checkForDuplicateTransferSingleOrBatch(txHash);
+  // update OptionType
+  optionType.amountExercised = optionType.amountExercised.plus(numberOfOptions);
+  optionType.save();
 
-  // update options and claims
-  const exerciserOwnedOptions = exerciser.optionIDsOwned;
-
-  const filteredOptions: Option[] = [];
-  for (let i = 0; i < exerciserOwnedOptions.length; i++) {
-    if (exerciserOwnedOptions[i].includes(optionId)) {
-      filteredOptions.push(Option.load(exerciserOwnedOptions[i])!);
-    }
-  }
-
-  for (let i = 0; i < numberOfOptions.toI32(); i++) {
-    const option = Option.load(filteredOptions[i].id)!;
-    option.exercised = true;
-    option.exerciser = exerciser.id;
-    option.exerciseTx = tx.id;
-    option.save();
-    const claim = Claim.load(option.claim)!;
-    claim.optionsExercised = claim.optionsExercised.plus(BigInt.fromI32(1));
-    claim.save();
-
-    const exerciserOptionIDsOwned = exerciser.optionIDsOwned;
-    const optionIndex = exerciserOptionIDsOwned.indexOf(`${option.id}`);
-    const slicedArrStart = exerciserOptionIDsOwned.slice(0, optionIndex);
-    const slicedArrEnd = exerciserOptionIDsOwned.slice(optionIndex + 1);
-    const updatedArray = [slicedArrStart, slicedArrEnd].flat();
-    exerciser.optionIDsOwned = updatedArray;
-    exerciser.save();
-  }
-
-  // get asset market prices
-  const underlyingPriceUSD = getTokenPriceUSD(underlyingToken.id);
+  // update tokens' TVL
   const underlyingAmtTotal = optionType.underlyingAmount.times(numberOfOptions);
-  const underlyingTotalUSD = underlyingPriceUSD.times(
-    underlyingAmtTotal.toBigDecimal()
-  );
-
-  const exercisePriceUSD = getTokenPriceUSD(exerciseToken.id);
   const exerciseAmtTotal = optionType.exerciseAmount.times(numberOfOptions);
-  const exerciseTotalUSD = exercisePriceUSD.times(
-    exerciseAmtTotal.toBigDecimal()
+
+  underlyingToken.totalValueLocked = underlyingToken.totalValueLocked.minus(
+    underlyingAmtTotal
+  );
+  exerciseToken.totalValueLocked = exerciseToken.totalValueLocked.plus(
+    exerciseAmtTotal
   );
 
-  // update tokens TVL
-  underlyingToken.tvl = underlyingToken.tvl.minus(underlyingAmtTotal);
   underlyingToken.save();
-  exerciseToken.tvl = exerciseToken.tvl.plus(exerciseAmtTotal);
   exerciseToken.save();
 
-  // update token metrics
-  const underlyingDaily = fetchDailyTokenMetrics(
-    underlyingToken.id,
-    event.block.timestamp
-  );
-  underlyingDaily.tvl = underlyingDaily.tvl.minus(underlyingAmtTotal);
-  underlyingDaily.notionalVolExercised = underlyingDaily.notionalVolExercised.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolSettled = underlyingDaily.notionalVolSettled.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
-    underlyingAmtTotal
-  );
-  underlyingDaily.notionalVolExercisedUSD = underlyingDaily.notionalVolExercisedUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.notionalVolSettledUSD = underlyingDaily.notionalVolSettledUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
-    underlyingTotalUSD
-  );
-  underlyingDaily.save();
-
-  const exerciseDaily = fetchDailyTokenMetrics(
-    exerciseToken.id,
-    event.block.timestamp
-  );
-  exerciseDaily.tvl = exerciseDaily.tvl.plus(exerciseAmtTotal);
-  exerciseDaily.notionalVolExercised = exerciseDaily.notionalVolExercised.plus(
-    exerciseAmtTotal
-  );
-  exerciseDaily.notionalVolSettled = exerciseDaily.notionalVolSettled.plus(
-    exerciseAmtTotal
-  );
-  exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
-    exerciseAmtTotal
-  );
-  exerciseDaily.notionalVolExercisedUSD = exerciseDaily.notionalVolExercisedUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.notionalVolSettledUSD = exerciseDaily.notionalVolSettledUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
-    exerciseTotalUSD
-  );
-  exerciseDaily.save();
-
-  // update OSE metrics
-  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
-    underlyingTotalUSD.plus(exerciseTotalUSD)
   );
   dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
     underlyingTotalUSD.plus(exerciseTotalUSD)
@@ -321,33 +206,25 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   const optionType = OptionType.load(optionId)!;
   const claim = Claim.load(claimId)!;
   const underlyingToken = fetchToken(optionType.underlyingAsset);
-  const exerciseToken = fetchToken(optionType.underlyingAsset);
+  const exerciseToken = fetchToken(optionType.exerciseAsset);
   const redeemer = fetchAccount(redeemerAddress);
-
-  // Delete any ERC1155 transfers that were created in the same txHash
-  const tx = checkForDuplicateTransferSingleOrBatch(txHash);
 
   // update claim
   claim.redeemed = true;
   claim.redeemer = redeemer.id;
-  claim.redeemTx = tx.id;
+  claim.redeemTx = txHash;
   claim.save();
 
-  // get asset market prices
-  const underlyingPriceUSD = getTokenPriceUSD(underlyingToken.id);
-  const underlyingTotalUSD = underlyingPriceUSD.times(
-    underlyingAmountRedeemed.toBigDecimal()
+  // update tokens' TVL
+  underlyingToken.totalValueLocked = underlyingToken.totalValueLocked.minus(
+    underlyingAmountRedeemed
   );
 
-  const exercisePriceUSD = getTokenPriceUSD(exerciseToken.id);
-  const exerciseTotalUSD = exercisePriceUSD.times(
-    exerciseAmountRedeemed.toBigDecimal()
+  exerciseToken.totalValueLocked = exerciseToken.totalValueLocked.minus(
+    exerciseAmountRedeemed
   );
 
-  // update tokens TVL
-  underlyingToken.tvl = underlyingToken.tvl.minus(underlyingAmountRedeemed);
   underlyingToken.save();
-  exerciseToken.tvl = exerciseToken.tvl.minus(exerciseAmountRedeemed);
   exerciseToken.save();
 
   // update token metrics
@@ -436,6 +313,10 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
+  const token = fetchToken(event.params.asset.toHexString());
+  token.feeBalance = token.feeBalance.plus(event.params.amount);
+  token.save();
+
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
@@ -464,6 +345,10 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
+  const token = fetchToken(event.params.asset.toHexString());
+  token.feeBalance = token.feeBalance.minus(event.params.amount);
+  token.save();
+
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
@@ -484,27 +369,56 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
 }
 
 export function handleTransferSingle(event: TransferSingleEvent): void {
-  // check transfer isn't an OSE Write/Exercise/Redeem event
+  // get params
   const fromAddress = event.params.from.toHexString();
   const toAddress = event.params.to.toHexString();
-  if (fromAddress == ZERO_ADDRESS || toAddress == ZERO_ADDRESS) {
-    return;
+  const tokenId = event.params.id;
+  const amount = event.params.amount;
+
+  // check transfer isn't an OSE Write/Exercise/Redeem event (mint/OSE is receiver/burn)
+  const transferIsExternal =
+    fromAddress != ZERO_ADDRESS &&
+    toAddress != ZERO_ADDRESS &&
+    toAddress != event.address.toHexString();
+
+  if (transferIsExternal) {
+    // bind to OptionSettlementEngine to call view functions
+    const ose = OSEContract.bind(Address.fromBytes(event.address));
+    // get type of Token
+    const tokenType = ose.tokenType(tokenId);
+
+    handleERC1155TransferMetrics(tokenId, amount, event, tokenType);
   }
-
-  log.warning("unhandled Transfer Single; to:{}, from:{}", [
-    toAddress,
-    fromAddress,
-  ]);
-
-  // try to find option or claim (s), then update their owners
 }
 
+// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferBatch(event: TransferBatchEvent): void {
-  // check transfer isn't an OSE Write/Exercise/Redeem event
+  // get params
   const fromAddress = event.params.from.toHexString();
   const toAddress = event.params.to.toHexString();
-  if (fromAddress == ZERO_ADDRESS || toAddress == ZERO_ADDRESS) {
-    return;
+
+  // check transfer isn't an OSE Write/Exercise/Redeem event (mint/OSE is receiver/burn)
+  const transferIsExternal =
+    fromAddress != ZERO_ADDRESS &&
+    toAddress != ZERO_ADDRESS &&
+    toAddress != event.address.toHexString();
+
+  if (transferIsExternal) {
+    // bind to OptionSettlementEngine to call view functions
+    const ose = OSEContract.bind(Address.fromBytes(event.address));
+
+    // iterate through batch
+    for (let i = 0; i < ids.length; i++) {
+      const tokenId = ids[i];
+      const amount = amounts[i];
+
+      // get type of Token
+      const tokenType = ose.tokenType(ids[i]);
+
+      handleERC1155TransferMetrics(tokenId, amount, event, tokenType);
+    }
+  }
+}
   }
 
   const optionId = event.params.ids[0];
