@@ -89,6 +89,7 @@ export function getBeginningOfDayInSeconds(timestamp: BigInt): BigInt {
   return timestamp.div(SECONDS_IN_DAY).times(SECONDS_IN_DAY);
 }
 
+// Used in handleDailyMetrics for Redeem/Transfer events
 export class RedeemOrTransferAmounts {
   _underlyingAmountTotal: BigInt;
   _exerciseAmountTotal: BigInt;
@@ -153,7 +154,6 @@ export function handleDailyMetrics(
   const underlyingTotalUSD = underlyingPriceUSD
     .times(underlyingAmountTotal.toBigDecimal())
     .div(exponentToBigDecimal(BigInt.fromI64(underlyingToken.decimals)));
-
   const exerciseTotalUSD = exercisePriceUSD
     .times(exerciseAmountTotal.toBigDecimal())
     .div(exponentToBigDecimal(BigInt.fromI64(exerciseToken.decimals)));
@@ -164,6 +164,7 @@ export function handleDailyMetrics(
   const exerciseDaily = fetchDailyTokenMetrics(exerciseToken.id, timestamp);
 
   // save previous TVLs
+  const dailyTVLUSDBefore = dailyOSEMetrics.totalValueLockedUSD;
   const underlyingTVLUSDBefore = underlyingDaily.totalValueLockedUSD;
   const exerciseTVLUSDBefore = exerciseDaily.totalValueLockedUSD;
 
@@ -173,7 +174,6 @@ export function handleDailyMetrics(
       .toBigDecimal()
       .div(exponentToBigDecimal(BigInt.fromI64(underlyingToken.decimals)))
   );
-
   const exerciseTVLUSDAfter = exercisePriceUSD.times(
     exerciseToken.totalValueLocked
       .toBigDecimal()
@@ -181,8 +181,9 @@ export function handleDailyMetrics(
   );
 
   /**
-   *  Daily OSE Metrics
+   *  Update Daily OSE Metrics
    */
+  // By saving the before/after TVL in USD, we are able to maintain consistent records
   dailyOSEMetrics.totalValueLockedUSD = dailyOSEMetrics.totalValueLockedUSD
     .minus(underlyingTVLUSDBefore)
     .minus(exerciseTVLUSDBefore)
@@ -190,6 +191,7 @@ export function handleDailyMetrics(
     .plus(exerciseTVLUSDAfter);
 
   if (eventKind == "write") {
+    // Update Written + Settled + Sum with notional value of Underlying Asset
     dailyOSEMetrics.notionalVolWrittenUSD = dailyOSEMetrics.notionalVolWrittenUSD.plus(
       underlyingTotalUSD
     );
@@ -201,6 +203,7 @@ export function handleDailyMetrics(
     );
   }
   if (eventKind == "exercise") {
+    // Update Exercised + Settled + Sum with notional value of Exercise Asset
     dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
       exerciseTotalUSD
     );
@@ -212,6 +215,7 @@ export function handleDailyMetrics(
     );
   }
   if (eventKind == "redeem") {
+    // Update Redeemed + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolRedeemedUSD = dailyOSEMetrics.notionalVolRedeemedUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
@@ -220,6 +224,7 @@ export function handleDailyMetrics(
     );
   }
   if (eventKind == "transfer") {
+    // Update Transferred + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolTransferredUSD = dailyOSEMetrics.notionalVolTransferredUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
@@ -230,13 +235,14 @@ export function handleDailyMetrics(
   dailyOSEMetrics.save();
 
   /**
-   *  Daily Token Metrics
+   *  Update Daily Token(s)' Metrics
    */
   if (eventKind == "write") {
-    // underlying
+    // Update TVL with incoming underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
 
+    // Update Underlying Token's Written + Settled + Sum with notional value
     underlyingDaily.notionalVolWritten = underlyingDaily.notionalVolWritten.plus(
       underlyingAmountTotal
     );
@@ -258,14 +264,15 @@ export function handleDailyMetrics(
   }
 
   if (eventKind == "exercise") {
-    // underlying - ONLY update TVL
+    // Update TVL with *outgoing* underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
 
-    // exercise
+    // Update TVL with *incoming* underlying token values
     exerciseDaily.totalValueLocked = exerciseToken.totalValueLocked;
     exerciseDaily.totalValueLockedUSD = exerciseTVLUSDAfter;
 
+    // Update Exercise Token's Exercised + Settled + Sum with notional value
     exerciseDaily.notionalVolExercised = exerciseDaily.notionalVolExercised.plus(
       exerciseAmountTotal
     );
@@ -289,10 +296,11 @@ export function handleDailyMetrics(
   }
 
   if (eventKind == "redeem") {
-    // underlying
+    // Update Underlying Token's TVL with outgoing underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
 
+    // Update Underlying Token's Redeemed + Sum with notional value of underlying tokens redeemed
     underlyingDaily.notionalVolRedeemed = underlyingDaily.notionalVolRedeemed.plus(
       underlyingAmountTotal
     );
@@ -307,10 +315,11 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    // exercise
+    // Update Exercise Token's TVL with outgoing exercise token values
     exerciseDaily.totalValueLocked = exerciseToken.totalValueLocked;
     exerciseDaily.totalValueLockedUSD = exerciseTVLUSDAfter;
 
+    // Update Exercise Token's Redeemed + Sum with notional value of exercise tokens redeemed
     exerciseDaily.notionalVolRedeemed = exerciseDaily.notionalVolRedeemed.plus(
       exerciseAmountTotal
     );
@@ -327,7 +336,7 @@ export function handleDailyMetrics(
   }
 
   if (eventKind == "transfer") {
-    // underlying
+    // Update Underlying Token's Transferred + Sum with notional value of underlying tokens transferred
     underlyingDaily.notionalVolTransferred = underlyingDaily.notionalVolTransferred.plus(
       underlyingAmountTotal
     );
@@ -342,7 +351,7 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    // exercise
+    // Update Exercise Token's Transferred + Sum with notional value of exercise tokens transferred
     exerciseDaily.notionalVolTransferred = exerciseDaily.notionalVolTransferred.plus(
       exerciseAmountTotal
     );
