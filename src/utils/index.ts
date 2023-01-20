@@ -12,18 +12,21 @@ export * from "./tokens";
 export * from "./constants";
 export * from "./price";
 
-// Retrieves or creates a daily data entity for tracking Volume and TVL.
+/**
+ * Retrieves or creates Daily Metrics for the entirety of the Option Settlement Engine
+ * @param {BigInt} timestamp
+ * @return {*}  {DayData}
+ * Notice: Code adapted from https://github.com/Uniswap/v3-subgraph/blob/bf03f940f17c3d32ee58bd37386f26713cff21e2/src/utils/intervalUpdates.ts#L23
+ */
 export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
-  // find
   const dayStart = getBeginningOfDayInSeconds(timestamp);
   let dailyOSEMetrics = DayData.load(dayStart.toString());
   if (dailyOSEMetrics) return dailyOSEMetrics;
 
-  // init
   dailyOSEMetrics = new DayData(dayStart.toString());
   dailyOSEMetrics.date = dayStart.toI32();
 
-  // find the last recorded day metrics to carry over TVL USD
+  // find the last recorded day metrics (past 30 days) to carry over TVL USD
   let lastDayData: DayData | null = null;
   for (let i = 1; i < 31; i++) {
     const previousDayStart = getBeginningOfDayInSeconds(
@@ -78,7 +81,11 @@ export function getBeginningOfDayInSeconds(timestamp: BigInt): BigInt {
   return timestamp.div(SECONDS_IN_DAY).times(SECONDS_IN_DAY);
 }
 
-// Used in handleDailyMetrics for Redeem/Transfer events
+/**
+ * Used in Redeem/Transfer event handlers to pass both tokens' total amounts
+ * @export
+ * @class RedeemOrTransferAmounts
+ */
 export class RedeemOrTransferAmounts {
   _underlyingAmountTotal: BigInt;
   _exerciseAmountTotal: BigInt;
@@ -104,7 +111,12 @@ export class RedeemOrTransferAmounts {
 }
 
 /**
+ * Updates the Daily OSE Metrics and the Daily Token Metrics for a given Write/Exercise/Redeem/Transfer event
  * @param {string} eventKind "write" | "exercise" | "redeem" | "transfer"
+ * @param {BigInt} timestamp
+ * @param {OptionType} optionType
+ * @param {BigInt} quantity
+ * @param {(RedeemOrTransferAmounts | null)} redeemOrTransferAmounts
  */
 export function handleDailyMetrics(
   eventKind: string,
