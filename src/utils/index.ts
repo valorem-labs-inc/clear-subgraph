@@ -1,6 +1,5 @@
 import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 import {
-  Transaction,
   OptionSettlementEngine as OSE,
   DayData,
   OptionType,
@@ -71,16 +70,6 @@ export function fetchOptionSettlementEngine(contractAddress: string): OSE {
   }
 
   return ose;
-}
-
-export function fetchTransaction(txHash: string): Transaction {
-  let tx = Transaction.load(txHash);
-  if (tx) return tx;
-
-  // init
-  tx = new Transaction(txHash);
-  tx.save();
-  return tx;
 }
 
 export const SECONDS_IN_DAY = BigInt.fromI32(86400);
