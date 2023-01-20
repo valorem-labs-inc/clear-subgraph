@@ -1,29 +1,55 @@
-type Option @entity {
+type OptionType @entity {
+  # OptionId
   id: ID!
-  underlyingAsset: Account
-  exerciseTimestamp: BigInt
-  expiryTimestamp: BigInt
-  exerciseAsset: Account
-  underlyingAmount: BigInt
-  settlementSeed: BigInt
-  exerciseAmount: BigInt
-  creator: Account # address
+
+  # Position
+  underlyingAsset: Token!
+  underlyingAmount: BigInt!
+  exerciseAsset: Token!
+  exerciseAmount: BigInt!
+
+  # Exercisable Window
+  exerciseTimestamp: BigInt!
+  expiryTimestamp: BigInt!
+
+  # The address that created the newOptionType
+  creator: Account!
+  # The transaction for the creation of the newOptionType
+  createTx: Transaction!
+
+  # The amount of ERC-1155 options written for this OptionType
+  amountWritten: BigInt!
+  # The amount of ERC-1155 options exercised for this OptionType
+  amountExercised: BigInt!
+
+  # Claims which collateralize this type of option
+  claims: [Claim!]!
 }
 
 type Claim @entity {
+  # ClaimId
   id: ID!
-  option: Option
-  writer: Account
-  amountWritten: BigInt
-  amountExercised: BigInt
-  claimed: Boolean
-  claimant: Account # address
-  exerciseAsset: Account # address
-  underlyingAsset: Account # address
-  exerciseAmount: BigInt
-  underlyingAmount: BigInt
+
+  # The OptionType the Claim belongs to
+  optionType: OptionType!
+
+  # The address that wrote the claim
+  writer: Account!
+  # The write transaction
+  writeTx: Transaction!
+
+  # Whether or not claim has been redeemed
+  redeemed: Boolean!
+  # Optional: The address that redeemed the claim
+  redeemer: Account
+  # Optional: The redeem transaction
+  redeemTx: Transaction
+
+  # The total number of fungible ERC-1155 Options that this claim corresponds to
+  amountWritten: BigInt!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type Account @entity {
   id: ID!
   asERC1155: ERC1155Contract
@@ -37,29 +63,36 @@ type Account @entity {
   events: [Event!]! @derivedFrom(field: "emitter")
 }
 
-type ERC1155Contract @entity {
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
+type ERC1155Contract @entity(immutable: true) {
   id: ID!
   asAccount: Account!
   tokens: [ERC1155Token!]! @derivedFrom(field: "contract")
   balances: [ERC1155Balance!]! @derivedFrom(field: "contract")
   operators: [ERC1155Operator!]! @derivedFrom(field: "contract")
   transfers: [ERC1155Transfer!]! @derivedFrom(field: "contract")
-  totalValueLockedUSD: BigDecimal!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Token @entity {
   id: ID!
-  type: Int
-  option: Option
-  claim: Claim
   contract: ERC1155Contract!
   identifier: BigInt!
   uri: String
   totalSupply: ERC1155Balance!
   balances: [ERC1155Balance!]! @derivedFrom(field: "token")
   transfers: [ERC1155Transfer!]! @derivedFrom(field: "token")
+
+  ## Valorem extended ERC-1155Token attributes
+  # 1 = Option; 2 = Claim
+  type: Int
+  # The OptionId if (type == 1)
+  optionType: OptionType
+  # The ClaimId if (type == 2)
+  claim: Claim
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Balance @entity {
   id: ID!
   contract: ERC1155Contract!
@@ -71,6 +104,7 @@ type ERC1155Balance @entity {
   transferToEvent: [ERC1155Transfer!]! @derivedFrom(field: "toBalance")
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Operator @entity {
   id: ID!
   contract: ERC1155Contract!
@@ -79,6 +113,7 @@ type ERC1155Operator @entity {
   approved: Boolean!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type ERC1155Transfer implements Event @entity(immutable: true) {
   id: ID!
   emitter: Account!
@@ -95,12 +130,15 @@ type ERC1155Transfer implements Event @entity(immutable: true) {
   valueExact: BigInt!
 }
 
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 interface Event {
   id: ID!
   transaction: Transaction!
   emitter: Account!
   timestamp: BigInt!
 }
+
+# https://github.com/OpenZeppelin/openzeppelin-subgraphs
 type Transaction @entity(immutable: true) {
   id: ID!
   timestamp: BigInt!
@@ -115,51 +153,99 @@ type DecimalValue @entity {
   decimals: Int!
 }
 
-type ValoremDayData @entity {
-  # timestamp rounded to current day by dividing by 86400
+type DayData @entity {
+  # Timestamp of day at 00:00AM UTC
   id: ID!
-  # timestamp rounded to current day by dividing by 86400
+  # Timestamp of day at 00:00AM UTC
   date: Int!
-  # tvl in USD terms
+
+  # TVL in USD
   totalValueLockedUSD: BigDecimal!
-  # volume in USD terms
-  volumeUSD: BigDecimal!
-  # fees accrued in USD terms
-  feesAccrued: BigDecimal!
-  # fees swept in USD terms
-  feesSwept: BigDecimal!
+
+  # Notional Volumes in USD
+  notionalVolWrittenUSD: BigDecimal! # Underlying Asset written
+  notionalVolExercisedUSD: BigDecimal! # Exercise Asset exercised for Options
+  notionalVolRedeemedUSD: BigDecimal! # Underlying and/or Exercise Asset redeemed from Claims
+  notionalVolTransferredUSD: BigDecimal! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
+  notionalVolSettledUSD: BigDecimal! # Fee Earning Volume; Written + Exercised
+  notionalVolSumUSD: BigDecimal! # Written + Exercised + Redeemed + Transferred
+  notionalVolFeesAccruedUSD: BigDecimal!
+  notionalVolFeesSweptUSD: BigDecimal!
+
+  # OptionSettlementEngine pointer
+  ose: OptionSettlementEngine!
+  # Metrics for each Token on same day
+  tokenDayData: [TokenDayData!]! @derivedFrom(field: "dayData")
 }
 
 type Token @entity {
+  # Token Address
   id: ID!
+
+  # Token Info
   symbol: String!
   name: String!
-  decimals: BigInt!
-  totalValueLocked: BigDecimal!
-  totalValueLockedUSD: BigDecimal!
+  decimals: Int!
+
+  # Total number of tokens in the OSE
+  totalValueLocked: BigInt!
+
+  # Amount of tokens that are ready to be swept as fees
+  feeBalance: BigInt!
+  # Lifetime sum of tokens paid to Valorem as fees
+  feesAccrued: BigInt!
+
+  # Daily metrics (tvl, volume, etc) for the token
+  tokenDayData: [TokenDayData!]! @derivedFrom(field: "token")
 }
 
 type TokenDayData @entity {
-  # token address concatendated with date
+  # Token Address + Timestamp of day at 00:00AM UTC
   id: ID!
-  # timestamp rounded to current day by dividing by 86400
+  # Timestamp of day at 00:00AM UTC
   date: Int!
-  # pointer to token
+
+  # The Token that these metrics belong to
   token: Token!
-  # tvl across all contracts in token units
-  totalValueLocked: BigDecimal!
-  # tvl across all contracts in usd
+
+  # TVL in OSE in token units
+  totalValueLocked: BigInt!
+  # TVL in OSE in USD
   totalValueLockedUSD: BigDecimal!
-  # token volume in token units
-  volume: BigDecimal!
-  # token volume in usd
-  volumeUSD: BigDecimal!
+
+  ## Notional Volumes in token units
+  notionalVolWritten: BigInt! # Underlying Asset written
+  notionalVolExercised: BigInt! # Exercise Asset exercised for Options
+  notionalVolRedeemed: BigInt! # Underlying and/or Exercise Asset redeemed from Claims
+  notionalVolTransferred: BigInt! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
+  notionalVolSettled: BigInt! # Fee Earning Volume; Written + Exercised
+  notionalVolSum: BigInt! # Written + Exercised + Redeemed + Transferred
+  notionalVolFeesAccrued: BigInt!
+  notionalVolFeesSwept: BigInt!
+
+  ## Notional Volumes in USD
+  notionalVolWrittenUSD: BigDecimal!
+  notionalVolExercisedUSD: BigDecimal!
+  notionalVolRedeemedUSD: BigDecimal!
+  notionalVolTransferredUSD: BigDecimal!
+  notionalVolSettledUSD: BigDecimal!
+  notionalVolSumUSD: BigDecimal!
+  notionalVolFeesAccruedUSD: BigDecimal!
+  notionalVolFeesSweptUSD: BigDecimal!
+
+  # Pointer to DayData for same day
+  dayData: DayData!
 }
 
-type FeeSwitch @entity {
+type OptionSettlementEngine @entity {
   # OptionSettlementEngine contract address
   id: ID!
-  # recipient of fees
-  feeToAddress: String!
-  isEnabled: Boolean!
+
+  # Whether or not fees for protocol are enabled
+  feesEnabled: Boolean!
+  # The address of the recipient of protocol fees
+  feeToAddress: Account!
+
+  # Daily metrics
+  historicalDayData: [DayData!]! @derivedFrom(field: "ose")
 }
