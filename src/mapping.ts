@@ -230,18 +230,22 @@ export function handleFeeToUpdated(event: FeeToUpdatedEvent): void {
 }
 
 export function handleFeeAccrued(event: FeeAccruedEvent): void {
+  // get params
   let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
   let formattedAmount = event.params.amount
     .toBigDecimal()
     .div(exponentToBigDecimal(assetDecimals));
 
+  // get market prices
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
+  // update token entity
   const token = fetchToken(event.params.asset.toHexString());
   token.feeBalance = token.feeBalance.plus(event.params.amount);
   token.save();
 
+  // update daily metrics
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
@@ -262,18 +266,22 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
 }
 
 export function handleFeeSwept(event: FeeSweptEvent): void {
+  // get params
   let assetDecimals = BigInt.fromI64(ERC20.bind(event.params.asset).decimals());
   let formattedAmount = event.params.amount
     .toBigDecimal()
     .div(exponentToBigDecimal(assetDecimals));
 
+  // get market prices
   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
   let feeValueUSD = assetPrice.times(formattedAmount);
 
+  // update token entity
   const token = fetchToken(event.params.asset.toHexString());
   token.feeBalance = token.feeBalance.minus(event.params.amount);
   token.save();
 
+  // handle daily metrics
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
     event.block.timestamp
