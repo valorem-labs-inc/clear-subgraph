@@ -1,3 +1,4 @@
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
 import { Account } from "../../generated/schema";
 
 export function fetchAccount(address: string): Account {

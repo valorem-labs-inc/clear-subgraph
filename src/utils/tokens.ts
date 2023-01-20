@@ -1,3 +1,4 @@
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
   getBeginningOfDayInSeconds,
