@@ -321,6 +321,8 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
 
   /**
    * Valorem Extension
+   * Checks if to/from addresses are not one of Valorem's or the Zero Address
+   * If neither are, records the amounts transferred in daily metrics
    */
   // get params
   const fromAddress = event.params.from.toHexString();
@@ -353,7 +355,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   const ids = event.params.ids;
   const amounts = event.params.amounts;
   // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
-  // sens of what is happening. Don't try to make something out of stupid code, and just throw the event. This
+  // sense of what is happening. Don't try to make something out of stupid code, and just throw the event. This
   // contract doesn't follow the standard anyway.
   if (ids.length == amounts.length) {
     for (let i = 0; i < ids.length; ++i) {
@@ -372,6 +374,8 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
 
   /**
    * Valorem Extension
+   * Checks if to/from addresses are not one of Valorem's or the Zero Address
+   * If neither are, records the amounts transferred in daily metrics
    */
   // get params
   const fromAddress = event.params.from.toHexString();
@@ -400,7 +404,11 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   }
 }
 
-// Valorem Specific
+/**
+ * Valorem Specific
+ * Updates daily metrics when ERC-1155 Tokens are transferred
+ * The to/from addresses are neither Valorem's or the Zero Address
+ */
 function handleERC1155TransferMetrics(
   tokenId: BigInt,
   amount: BigInt,
@@ -529,6 +537,7 @@ function registerTransfer(
 
   /**
    * Valorem Extension
+   * Sets the token type and relation of ERC-1155 Tokens on mint
    */
   if (!token.optionType && !token.claim) {
     // bind to OptionSettlementEngine to call view functions
