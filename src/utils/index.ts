@@ -125,8 +125,6 @@ export function handleDailyMetrics(
   quantity: BigInt,
   redeemOrTransferAmounts: RedeemOrTransferAmounts | null
 ): void {
-  // TODO: Remove logs before merging
-  log.info("Handling Daily Metrics for {} event.", [eventKind]);
   // get tokens
   const underlyingToken = fetchToken(optionType.underlyingAsset);
   const exerciseToken = fetchToken(optionType.exerciseAsset);
@@ -371,54 +369,4 @@ export function handleDailyMetrics(
   }
   exerciseDaily.save();
   underlyingDaily.save();
-  // TODO: Remove logs before merging
-  log.warning(
-    `UnderlyingToken: {},\nToken Price in USD: {},\nAmount Transferred: {},\nTotal Notional Value USD: {}`,
-    [
-      underlyingToken.symbol,
-      underlyingPriceUSD.toString(),
-      underlyingAmountTotal.toString(),
-      underlyingTotalUSD.toString(),
-    ]
-  );
-
-  log.warning(
-    `Underlying Token - {}\nTVL in USD Before Tx: {},\nTVL in USD After: {}`,
-    [
-      underlyingToken.symbol,
-      underlyingTVLUSDBefore.toString(),
-      underlyingTVLUSDAfter.toString(),
-    ]
-  );
-
-  log.warning(
-    `Exercise Token: {},\nToken Price in USD: {},\nAmount Transferred: {},\nTotal Notional Value USD: {}`,
-    [
-      exerciseToken.symbol,
-      exercisePriceUSD.toString(),
-      exerciseAmountTotal.toString(),
-      exerciseTotalUSD.toString(),
-    ]
-  );
-
-  log.warning(
-    `Exercise Token - {}\nTVL in USD Before Tx: {},\nTVL in USD After: {}`,
-    [
-      exerciseToken.symbol,
-      exerciseTVLUSDBefore.toString(),
-      exerciseTVLUSDAfter.toString(),
-    ]
-  );
-
-  log.warning(
-    "Option Settlement Engine:\nTVL in USD Before: {},\nTVL in USD After: {}",
-    [
-      dailyTVLUSDBefore.toString(),
-      dailyOSEMetrics.totalValueLockedUSD.toString(),
-    ]
-  );
-
-  log.info("Finished updating Daily Metrics for {} event.", [
-    eventKind.toUpperCase(),
-  ]);
 }
