@@ -203,8 +203,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
       underlyingTotalUSD
     );
-  }
-  if (eventKind == "exercise") {
+  } else if (eventKind == "exercise") {
     // Update Exercised + Settled + Sum with notional value of Exercise Asset
     dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
       exerciseTotalUSD
@@ -215,8 +214,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-  if (eventKind == "redeem") {
+  } else if (eventKind == "redeem") {
     // Update Redeemed + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolRedeemedUSD = dailyOSEMetrics.notionalVolRedeemedUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
@@ -224,8 +222,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-  }
-  if (eventKind == "transfer") {
+  } else if (eventKind == "transfer") {
     // Update Transferred + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolTransferredUSD = dailyOSEMetrics.notionalVolTransferredUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
@@ -263,9 +260,7 @@ export function handleDailyMetrics(
     underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
       underlyingTotalUSD
     );
-  }
-
-  if (eventKind == "exercise") {
+  } else if (eventKind == "exercise") {
     // Update TVL with *outgoing* underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
@@ -295,9 +290,7 @@ export function handleDailyMetrics(
     exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-
-  if (eventKind == "redeem") {
+  } else if (eventKind == "redeem") {
     // Update Underlying Token's TVL with outgoing underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
@@ -335,9 +328,7 @@ export function handleDailyMetrics(
     exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-
-  if (eventKind == "transfer") {
+  } else if (eventKind == "transfer") {
     // Update Underlying Token's Transferred + Sum with notional value of underlying tokens transferred
     underlyingDaily.notionalVolTransferred = underlyingDaily.notionalVolTransferred.plus(
       underlyingAmountTotal

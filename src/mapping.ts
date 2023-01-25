@@ -393,13 +393,11 @@ function handleERC1155TransferMetrics(
     let transferAmounts = new RedeemOrTransferAmounts();
 
     // if option was transferred only update underlying token's metrics
+    // if claim was transferred update underlying and exercise tokens' metrics
     if (tokenType == 1) {
       const underlyingAmountTotal = optionType.underlyingAmount.times(amount);
       transferAmounts.underlyingAmountTotal = underlyingAmountTotal;
-    }
-
-    // if claim was transferred update underlying and exercise tokens' metrics
-    if (tokenType == 2) {
+    } else if (tokenType == 2) {
       // get ratio of corresponding options written/exercised
       const claimStruct = ose.claim(tokenId);
       const amountWritten = claimStruct.amountWritten;
@@ -511,13 +509,12 @@ function registerTransfer(
     // get type of Token
     const tokenType = ose.tokenType(id);
 
-    // option transfer
     if (tokenType == 1) {
+      // option transfer
       token.type = 1;
       token.optionType = id.toString();
-    }
-    // claim transfer
-    if (tokenType == 2) {
+    } else if (tokenType == 2) {
+      // claim transfer
       token.type = 2;
       token.claim = id.toString();
     }
