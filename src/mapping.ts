@@ -252,16 +252,14 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
     event.params.asset.toHexString(),
     event.block.timestamp
   );
-  tokenDaily.notionalVolFeesAccrued = tokenDaily.notionalVolFeesAccrued.plus(
+  tokenDaily.volFeesAccrued = tokenDaily.volFeesAccrued.plus(
     event.params.amount
   );
-  tokenDaily.notionalVolFeesAccruedUSD = tokenDaily.notionalVolFeesAccruedUSD.plus(
-    feeValueUSD
-  );
+  tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolFeesAccruedUSD = dailyOSEMetrics.notionalVolFeesAccruedUSD.plus(
+  dailyOSEMetrics.volFeesAccruedUSD = dailyOSEMetrics.volFeesAccruedUSD.plus(
     feeValueUSD
   );
   dailyOSEMetrics.save();
@@ -288,16 +286,12 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
     event.params.asset.toHexString(),
     event.block.timestamp
   );
-  tokenDaily.notionalVolFeesSwept = tokenDaily.notionalVolFeesSwept.plus(
-    event.params.amount
-  );
-  tokenDaily.notionalVolFeesSweptUSD = tokenDaily.notionalVolFeesSweptUSD.plus(
-    feeValueUSD
-  );
+  tokenDaily.volFeesSwept = tokenDaily.volFeesSwept.plus(event.params.amount);
+  tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolFeesSweptUSD = dailyOSEMetrics.notionalVolFeesSweptUSD.plus(
+  dailyOSEMetrics.volFeesSweptUSD = dailyOSEMetrics.volFeesSweptUSD.plus(
     feeValueUSD
   );
   dailyOSEMetrics.save();

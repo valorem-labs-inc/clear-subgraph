@@ -163,8 +163,8 @@ type DayData @entity {
   notionalVolTransferredUSD: BigDecimal! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
   notionalVolSettledUSD: BigDecimal! # Fee Earning Volume; Written + Exercised
   notionalVolSumUSD: BigDecimal! # Written + Exercised + Redeemed + Transferred
-  notionalVolFeesAccruedUSD: BigDecimal!
-  notionalVolFeesSweptUSD: BigDecimal!
+  volFeesAccruedUSD: BigDecimal!
+  volFeesSweptUSD: BigDecimal!
 
   # OptionSettlementEngine pointer
   ose: OptionSettlementEngine!
@@ -214,8 +214,8 @@ type TokenDayData @entity {
   notionalVolTransferred: BigInt! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
   notionalVolSettled: BigInt! # Fee Earning Volume; Written + Exercised
   notionalVolSum: BigInt! # Written + Exercised + Redeemed + Transferred
-  notionalVolFeesAccrued: BigInt!
-  notionalVolFeesSwept: BigInt!
+  volFeesAccrued: BigInt!
+  volFeesSwept: BigInt!
 
   ## Notional Volumes in USD
   notionalVolWrittenUSD: BigDecimal!
@@ -224,8 +224,8 @@ type TokenDayData @entity {
   notionalVolTransferredUSD: BigDecimal!
   notionalVolSettledUSD: BigDecimal!
   notionalVolSumUSD: BigDecimal!
-  notionalVolFeesAccruedUSD: BigDecimal!
-  notionalVolFeesSweptUSD: BigDecimal!
+  volFeesAccruedUSD: BigDecimal!
+  volFeesSweptUSD: BigDecimal!
 
   # Pointer to DayData for same day
   dayData: DayData!

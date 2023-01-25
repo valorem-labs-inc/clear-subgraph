@@ -52,8 +52,8 @@ export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   dailyOSEMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.save();
 
   return dailyOSEMetrics;
