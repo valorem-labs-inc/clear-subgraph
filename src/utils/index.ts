@@ -50,7 +50,7 @@ export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolCoreSumUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
   dailyOSEMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
@@ -200,7 +200,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
       underlyingTotalUSD
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
   } else if (eventKind == "exercise") {
@@ -211,7 +211,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
       exerciseTotalUSD
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
   } else if (eventKind == "redeem") {
@@ -219,7 +219,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolRedeemedUSD = dailyOSEMetrics.notionalVolRedeemedUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
   } else if (eventKind == "transfer") {
@@ -227,7 +227,7 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolTransferredUSD = dailyOSEMetrics.notionalVolTransferredUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
   }
@@ -248,7 +248,7 @@ export function handleDailyMetrics(
     underlyingDaily.notionalVolSettled = underlyingDaily.notionalVolSettled.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
     underlyingDaily.notionalVolWrittenUSD = underlyingDaily.notionalVolWrittenUSD.plus(
@@ -257,7 +257,7 @@ export function handleDailyMetrics(
     underlyingDaily.notionalVolSettledUSD = underlyingDaily.notionalVolSettledUSD.plus(
       underlyingTotalUSD
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
   } else if (eventKind == "exercise") {
@@ -284,10 +284,10 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
   } else if (eventKind == "redeem") {
@@ -303,10 +303,10 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
 
@@ -322,10 +322,10 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
   } else if (eventKind == "transfer") {
@@ -337,10 +337,10 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
 
@@ -352,10 +352,10 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
   }

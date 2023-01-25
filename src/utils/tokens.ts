@@ -85,7 +85,7 @@ export function fetchDailyTokenMetrics(
   tokenMetrics.notionalVolExercised = BigInt.fromI32(0);
   tokenMetrics.notionalVolRedeemed = BigInt.fromI32(0);
   tokenMetrics.notionalVolTransferred = BigInt.fromI32(0);
-  tokenMetrics.notionalVolSum = BigInt.fromI32(0);
+  tokenMetrics.notionalVolCoreSum = BigInt.fromI32(0);
   tokenMetrics.notionalVolSettled = BigInt.fromI32(0);
   tokenMetrics.volFeesAccrued = BigInt.fromI32(0);
   tokenMetrics.volFeesSwept = BigInt.fromI32(0);
@@ -93,7 +93,7 @@ export function fetchDailyTokenMetrics(
   tokenMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
-  tokenMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolCoreSumUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
   tokenMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
   tokenMetrics.volFeesSweptUSD = BigDecimal.fromString("0");

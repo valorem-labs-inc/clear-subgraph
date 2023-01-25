@@ -162,7 +162,7 @@ type DayData @entity {
   notionalVolRedeemedUSD: BigDecimal! # Underlying and/or Exercise Asset redeemed from Claims
   notionalVolTransferredUSD: BigDecimal! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
   notionalVolSettledUSD: BigDecimal! # Fee Earning Volume; Written + Exercised
-  notionalVolSumUSD: BigDecimal! # Written + Exercised + Redeemed + Transferred
+  notionalVolCoreSumUSD: BigDecimal! # Written + Exercised + Redeemed + Transferred
   volFeesAccruedUSD: BigDecimal!
   volFeesSweptUSD: BigDecimal!
 
@@ -213,7 +213,7 @@ type TokenDayData @entity {
   notionalVolRedeemed: BigInt! # Underlying and/or Exercise Asset redeemed from Claims
   notionalVolTransferred: BigInt! # Claim Transferred: Current Underlying and/or Exercise Asset; Option Transferred: Underlying Asset
   notionalVolSettled: BigInt! # Fee Earning Volume; Written + Exercised
-  notionalVolSum: BigInt! # Written + Exercised + Redeemed + Transferred
+  notionalVolCoreSum: BigInt! # Written + Exercised + Redeemed + Transferred
   volFeesAccrued: BigInt!
   volFeesSwept: BigInt!
 
@@ -223,7 +223,7 @@ type TokenDayData @entity {
   notionalVolRedeemedUSD: BigDecimal!
   notionalVolTransferredUSD: BigDecimal!
   notionalVolSettledUSD: BigDecimal!
-  notionalVolSumUSD: BigDecimal!
+  notionalVolCoreSumUSD: BigDecimal!
   volFeesAccruedUSD: BigDecimal!
   volFeesSweptUSD: BigDecimal!
 
