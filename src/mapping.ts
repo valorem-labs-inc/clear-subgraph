@@ -354,9 +354,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   const to = fetchAccount(event.params.to.toHexString());
   const ids = event.params.ids;
   const amounts = event.params.amounts;
-  // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
-  // sense of what is happening. Don't try to make something out of stupid code, and just throw the event. This
-  // contract doesn't follow the standard anyway.
+
   if (ids.length == amounts.length) {
     for (let i = 0; i < ids.length; ++i) {
       registerTransfer(
