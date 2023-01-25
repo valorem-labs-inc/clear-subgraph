@@ -14,7 +14,7 @@ import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
 /**
  *Searches for and returns an ERC-1155 Token, initializing a new one if not found
  * @param {string} tokenAddress.toHexString()
- * @return {*}  {Token}
+ * @return {Token}
  */
 export function fetchToken(address: string): Token {
   let token = Token.load(address);
@@ -40,7 +40,7 @@ export function fetchToken(address: string): Token {
  * Searches for and returns the Daily Metrics for a given Token, initializing a new one if not found
  * @param {string} tokenAddress
  * @param {BigInt} timestamp
- * @return {*}  {TokenDayData}
+ * @return {TokenDayData}
  */
 export function fetchDailyTokenMetrics(
   tokenAddress: string,

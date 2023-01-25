@@ -17,7 +17,7 @@ export * from "./price";
 /**
  * Retrieves or creates Daily Metrics for the entirety of the Option Settlement Engine
  * @param {BigInt} timestamp
- * @return {*}  {DayData}
+ * @return {DayData}
  */
 export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   const dayStart = getBeginningOfDayInSeconds(timestamp);
