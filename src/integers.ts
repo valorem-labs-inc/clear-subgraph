@@ -1,4 +1,5 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+
 import { BigInt } from "@graphprotocol/graph-ts";
 import { constants } from "./constants";
 

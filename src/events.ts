@@ -1,4 +1,5 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+
 import { ethereum } from "@graphprotocol/graph-ts";
 
 export namespace events {

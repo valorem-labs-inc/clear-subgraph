@@ -1,3 +1,5 @@
+// Credit to https://github.com/Uniswap/v3-subgraph, included under GNU GPL v3 License
+
 import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 import {
   OptionSettlementEngine as OSE,
@@ -16,7 +18,6 @@ export * from "./price";
  * Retrieves or creates Daily Metrics for the entirety of the Option Settlement Engine
  * @param {BigInt} timestamp
  * @return {*}  {DayData}
- * Notice: Code adapted from https://github.com/Uniswap/v3-subgraph/blob/bf03f940f17c3d32ee58bd37386f26713cff21e2/src/utils/intervalUpdates.ts#L23
  */
 export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
   const dayStart = getBeginningOfDayInSeconds(timestamp);

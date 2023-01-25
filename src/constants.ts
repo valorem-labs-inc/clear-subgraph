@@ -1,4 +1,5 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+
 import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
 
 export namespace constants {

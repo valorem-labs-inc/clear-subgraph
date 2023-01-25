@@ -1,4 +1,5 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { DecimalValue } from "../generated/schema";

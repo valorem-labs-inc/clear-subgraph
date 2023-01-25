@@ -1,3 +1,5 @@
+// Credit to https://github.com/Uniswap/v3-subgraph, included under GNU GPL v3 License
+
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";
 import { UniswapV3Pool } from "../../generated/OptionSettlementEngine/UniswapV3Pool";
@@ -73,7 +75,6 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 
 // Derives token price in ETH terms by using either the token / WETH pool,
 // or a whitelisted tokens WETH pool.
-// Credit: https://github.com/Uniswap/v3-subgraph/blob/main/src/utils/pricing.ts#L74
 export function findEthPerToken(tokenAddress: string): BigDecimal {
   // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
   // ! hardcode ERC20 price 1/1250 USD (stablecoins)

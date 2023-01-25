@@ -1,4 +1,6 @@
-import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
 import {
   OptionType,
@@ -301,7 +303,6 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   dailyOSEMetrics.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferSingle(event: TransferSingleEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let operator = fetchAccount(event.params.operator.toHexString());
@@ -346,7 +347,6 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
   }
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferBatch(event: TransferBatchEvent): void {
   const contract = fetchERC1155(event.address.toHexString());
   const operator = fetchAccount(event.params.operator.toHexString());
@@ -453,7 +453,6 @@ function handleERC1155TransferMetrics(
   );
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleApprovalForAll(event: ApprovalForAllEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let owner = fetchAccount(event.params.owner.toHexString());
@@ -463,7 +462,6 @@ export function handleApprovalForAll(event: ApprovalForAllEvent): void {
   delegation.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleURI(event: URIEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let token = fetchERC1155Token(contract, event.params.id);
@@ -471,7 +469,6 @@ export function handleURI(event: URIEvent): void {
   token.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 function registerTransfer(
   event: ethereum.Event,
   suffix: string,
