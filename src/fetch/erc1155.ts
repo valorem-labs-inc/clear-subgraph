@@ -16,10 +16,22 @@ import { constants } from "../constants";
 import { fetchAccount } from "../fetch/account";
 
 export function replaceURI(uri: string, identifier: BigInt): string {
-  return uri.replaceAll("{id}", identifier.toHex().slice(2).padStart(64, "0"));
+  return uri.replaceAll(
+    "{id}",
+    identifier
+      .toHex()
+      .slice(2)
+      .padStart(64, "0")
+  );
 }
 
-export function fetchERC1155(address: Address): ERC1155Contract {
+/**
+ * Searches for and returns an ERC-1155 Contract, initializing a new one if not found
+ * Note: Only the OptionSettlementEngine at this time
+ * @param {string} contractAddress.toHexString()
+ * @return {*}  {ERC1155Contract}
+ */
+export function fetchERC1155(address: string): ERC1155Contract {
   let account = fetchAccount(address);
   let contract = ERC1155Contract.load(account.id);
 
@@ -35,6 +47,12 @@ export function fetchERC1155(address: Address): ERC1155Contract {
   return contract;
 }
 
+/**
+ * Searches for and returns an ERC-1155 Token, initializing a new one if not found
+ * @param {ERC1155Contract} contract
+ * @param {BigInt} identifier
+ * @return {*}  {ERC1155Token}
+ */
 export function fetchERC1155Token(
   contract: ERC1155Contract,
   identifier: BigInt
@@ -56,6 +74,12 @@ export function fetchERC1155Token(
   return token as ERC1155Token;
 }
 
+/**
+ * Searches for and returns the balance of a specific ERC-1155 for a given Account, initializing a new one if not found
+ * @param {ERC1155Token} token: optionId or claimId
+ * @param {(Account | null)} account
+ * @return {*}  {ERC1155Balance}
+ */
 export function fetchERC1155Balance(
   token: ERC1155Token,
   account: Account | null
@@ -76,7 +100,14 @@ export function fetchERC1155Balance(
   return balance as ERC1155Balance;
 }
 
-export function fetchERC721Operator(
+/**
+ * Searches for and returns an ERC-1155 Operator for a given Contract & Account, initializing a new one if not found
+ * @param {ERC1155Contract} contract: OSE Address
+ * @param {Account} owner
+ * @param {Account} operator
+ * @return {*}  {ERC1155Operator}
+ */
+export function fetchERC1155Operator(
   contract: ERC1155Contract,
   owner: Account,
   operator: Account

@@ -23,6 +23,9 @@ const TOKEN_WHITELIST = [
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
+  // TODO: REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
+  // ! hardcode ETH price 1250 USD
+  return BigDecimal.fromString("1250");
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -42,7 +45,10 @@ export function getEthPriceInUSD(): BigDecimal {
   );
 
   if (
-    daiPool.token0().toHexString().toLowerCase() == WETH_ADDRESS.toLowerCase()
+    daiPool
+      .token0()
+      .toHexString()
+      .toLowerCase() == WETH_ADDRESS.toLowerCase()
   ) {
     return tokenPrices[1];
   }
@@ -51,9 +57,16 @@ export function getEthPriceInUSD(): BigDecimal {
 }
 
 export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
-  const ethPriceUSD = getEthPriceInUSD();
+  const ethPriceUSD = getEthPriceInUSD(); // ! Hardcoded
 
-  const derivedEth = findEthPerToken(tokenAddress);
+  const derivedEth = findEthPerToken(tokenAddress); // ! Hardcoded
+
+  if (
+    tokenAddress.toLowerCase() == WETH_ADDRESS.toLowerCase() ||
+    tokenAddress.toLowerCase() == ZERO_ADDRESS.toLowerCase()
+  ) {
+    return ethPriceUSD;
+  }
 
   return derivedEth.times(ethPriceUSD);
 }
@@ -62,6 +75,10 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 // or a whitelisted tokens WETH pool.
 // Credit: https://github.com/Uniswap/v3-subgraph/blob/main/src/utils/pricing.ts#L74
 export function findEthPerToken(tokenAddress: string): BigDecimal {
+  // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
+  // ! hardcode ERC20 price 1/1250 USD (stablecoins)
+  return BigDecimal.fromString("0.0008");
+
   const uniswapFactory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -166,10 +183,10 @@ export function sqrtPriceX96ToTokenPrices(
   token0: ERC20,
   token1: ERC20
 ): BigDecimal[] {
+  const Q192 = BigInt.fromI32(2).pow(192);
+
   let num = sqrtPriceX96.times(sqrtPriceX96).toBigDecimal();
-  let denom = BigDecimal.fromString(
-    "6277101735386680763835789423207666416102355444464034512896"
-  );
+  let denom = BigDecimal.fromString(Q192.toString());
 
   let price1 = num
     .div(denom)

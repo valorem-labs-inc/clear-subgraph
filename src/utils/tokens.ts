@@ -1,55 +1,104 @@
-import { Address, BigDecimal, BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
+// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import {
+  getBeginningOfDayInSeconds,
+  fetchDailyOSEMetrics,
+  SECONDS_IN_DAY,
+} from ".";
+
 import { Token, TokenDayData } from "../../generated/schema";
 
-export function loadOrInitializeToken(tokenAddress: Address): Token {
-  let token = Token.load(tokenAddress.toHexString());
-  if (token) {
-    return token;
-  }
+import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
 
-  return initializeToken(tokenAddress);
-}
+/**
+ *Searches for and returns an ERC-1155 Token, initializing a new one if not found
+ * @param {string} tokenAddress.toHexString()
+ * @return {*}  {Token}
+ */
+export function fetchToken(address: string): Token {
+  let token = Token.load(address);
+  if (token) return token;
 
-export function initializeToken(tokenAddress: Address): Token {
-  let tokenContract = ERC20.bind(tokenAddress);
+  let tokenContract = ERC20.bind(Address.fromString(address));
+  token = new Token(address);
 
-  let token = new Token(tokenAddress.toHexString());
-
-  token.name = tokenContract.name();
   token.symbol = tokenContract.symbol();
-  token.decimals = BigInt.fromI32(tokenContract.decimals());
-  token.totalValueLocked = BigDecimal.zero();
-  token.totalValueLockedUSD = BigDecimal.zero();
+  token.name = tokenContract.name();
+  token.decimals = tokenContract.decimals();
+
+  token.totalValueLocked = BigInt.fromI32(0);
+  token.feeBalance = BigInt.fromI32(0);
+  token.feesAccrued = BigInt.fromI32(0);
 
   token.save();
 
   return token;
 }
 
-export function updateTokenDayData(
-  token: Token,
-  event: ethereum.Event
+/**
+ * Searches for and returns the Daily Metrics for a given Token, initializing a new one if not found
+ * @param {string} tokenAddress
+ * @param {BigInt} timestamp
+ * @return {*}  {TokenDayData}
+ */
+export function fetchDailyTokenMetrics(
+  tokenAddress: string,
+  timestamp: BigInt
 ): TokenDayData {
-  let timestamp = event.block.timestamp.toI32();
-  let dayID = timestamp / 86400;
-  let dayStartTimestamp = dayID * 86400;
+  // find
+  const dayStart = getBeginningOfDayInSeconds(timestamp);
+  let tokenMetrics = TokenDayData.load(
+    `${tokenAddress}-${dayStart.toString()}`
+  );
+  if (tokenMetrics) return tokenMetrics;
 
-  let tokenDayID = token.id.toString().concat("-").concat(dayID.toString());
+  // init
+  const token = fetchToken(tokenAddress);
+  const dailyOSEMetrics = fetchDailyOSEMetrics(timestamp);
 
-  let tokenDayData = TokenDayData.load(tokenDayID);
-  if (tokenDayData === null) {
-    tokenDayData = new TokenDayData(tokenDayID);
-    tokenDayData.date = dayStartTimestamp;
-    tokenDayData.token = token.id;
-    tokenDayData.volume = BigDecimal.zero();
-    tokenDayData.volumeUSD = BigDecimal.zero();
-    // tokenDayData.feesUSD = ZERO_BD
+  // find the last recorded day metrics to carry over TVL USD
+  let lastDayData: TokenDayData | null = null;
+  for (let i = 1; i < 31; i++) {
+    const previousDayStart = getBeginningOfDayInSeconds(
+      timestamp.minus(BigInt.fromI32(i).times(SECONDS_IN_DAY))
+    );
+
+    const previousDaysMetrics = TokenDayData.load(
+      `${tokenAddress}-${previousDayStart.toString()}`
+    );
+
+    if (previousDaysMetrics != null) {
+      // set variable and break search loop
+      lastDayData = previousDaysMetrics;
+      break;
+    }
   }
 
-  tokenDayData.totalValueLocked = token.totalValueLocked;
-  tokenDayData.totalValueLockedUSD = token.totalValueLockedUSD;
-  tokenDayData.save();
+  tokenMetrics = new TokenDayData(`${tokenAddress}-${dayStart.toString()}`);
+  tokenMetrics.date = dayStart.toI32();
+  tokenMetrics.totalValueLocked = token.totalValueLocked;
+  tokenMetrics.totalValueLockedUSD = lastDayData
+    ? lastDayData.totalValueLockedUSD
+    : BigDecimal.fromString("0"); // init with 0 for first event after contract deployment
+  tokenMetrics.notionalVolWritten = BigInt.fromI32(0);
+  tokenMetrics.notionalVolExercised = BigInt.fromI32(0);
+  tokenMetrics.notionalVolRedeemed = BigInt.fromI32(0);
+  tokenMetrics.notionalVolTransferred = BigInt.fromI32(0);
+  tokenMetrics.notionalVolSum = BigInt.fromI32(0);
+  tokenMetrics.notionalVolSettled = BigInt.fromI32(0);
+  tokenMetrics.notionalVolFeesAccrued = BigInt.fromI32(0);
+  tokenMetrics.notionalVolFeesSwept = BigInt.fromI32(0);
+  tokenMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
+  tokenMetrics.token = token.id;
+  tokenMetrics.dayData = dailyOSEMetrics.id;
+  tokenMetrics.save();
 
-  return tokenDayData as TokenDayData;
+  return tokenMetrics;
 }
