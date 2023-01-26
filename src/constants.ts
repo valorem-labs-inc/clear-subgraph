@@ -1,4 +1,9 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
 import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
 
 export namespace constants {

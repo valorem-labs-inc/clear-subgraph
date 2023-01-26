@@ -1,4 +1,9 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
 import { ethereum } from "@graphprotocol/graph-ts";
 
 import { Transaction } from "../generated/schema";

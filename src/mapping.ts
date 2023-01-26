@@ -1,4 +1,4 @@
-import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
 import {
   OptionType,
@@ -250,16 +250,14 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
     event.params.asset.toHexString(),
     event.block.timestamp
   );
-  tokenDaily.notionalVolFeesAccrued = tokenDaily.notionalVolFeesAccrued.plus(
+  tokenDaily.volFeesAccrued = tokenDaily.volFeesAccrued.plus(
     event.params.amount
   );
-  tokenDaily.notionalVolFeesAccruedUSD = tokenDaily.notionalVolFeesAccruedUSD.plus(
-    feeValueUSD
-  );
+  tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolFeesAccruedUSD = dailyOSEMetrics.notionalVolFeesAccruedUSD.plus(
+  dailyOSEMetrics.volFeesAccruedUSD = dailyOSEMetrics.volFeesAccruedUSD.plus(
     feeValueUSD
   );
   dailyOSEMetrics.save();
@@ -286,22 +284,83 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
     event.params.asset.toHexString(),
     event.block.timestamp
   );
-  tokenDaily.notionalVolFeesSwept = tokenDaily.notionalVolFeesSwept.plus(
-    event.params.amount
-  );
-  tokenDaily.notionalVolFeesSweptUSD = tokenDaily.notionalVolFeesSweptUSD.plus(
-    feeValueUSD
-  );
+  tokenDaily.volFeesSwept = tokenDaily.volFeesSwept.plus(event.params.amount);
+  tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.notionalVolFeesSweptUSD = dailyOSEMetrics.notionalVolFeesSweptUSD.plus(
+  dailyOSEMetrics.volFeesSweptUSD = dailyOSEMetrics.volFeesSweptUSD.plus(
     feeValueUSD
   );
   dailyOSEMetrics.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
+// checks if transfer is an OSE Write/Exercise/Redeem event (mint/burn)
+function isMintOrBurn(from: string, to: string): boolean {
+  return from == ZERO_ADDRESS || to == ZERO_ADDRESS;
+}
+
+/**
+ * Updates daily metrics when ERC-1155 Tokens are transferred
+ * Requires that the to/from addresses are not the Zero Address
+ */
+function handleERC1155TransferMetrics(
+  tokenId: BigInt,
+  amount: BigInt,
+  fromAddress: string,
+  toAddress: string,
+  eventAddress: string,
+  eventTimestamp: BigInt
+): void {
+  if (!isMintOrBurn(fromAddress, toAddress)) {
+    // bind to OptionSettlementEngine to call view functions
+    const ose = OSEContract.bind(Address.fromString(eventAddress));
+
+    // get type of Token
+    const tokenType = ose.tokenType(tokenId);
+
+    // load entities for calculating metrics
+    const optionType = OptionType.load(tokenId.toString())!;
+
+    let transferAmounts = new RedeemOrTransferAmounts();
+
+    // if option was transferred only update underlying token's metrics
+    // if claim was transferred update underlying and exercise tokens' metrics
+    if (tokenType == 1) {
+      const underlyingAmountTotal = optionType.underlyingAmount.times(amount);
+      transferAmounts.underlyingAmountTotal = underlyingAmountTotal;
+    } else if (tokenType == 2) {
+      // get ratio of corresponding options written/exercised
+      const claimStruct = ose.claim(tokenId);
+      const amountWritten = claimStruct.amountWritten;
+      const amountExercised = claimStruct.amountExercised;
+
+      transferAmounts.underlyingAmountTotal = optionType.underlyingAmount.times(
+        amountWritten.minus(amountExercised)
+      );
+
+      transferAmounts.exerciseAmountTotal = optionType.exerciseAmount.times(
+        amountExercised
+      );
+    }
+
+    // update metrics
+    handleDailyMetrics(
+      "transfer",
+      eventTimestamp,
+      optionType,
+      BigInt.fromI32(1),
+      transferAmounts
+    );
+  }
+}
+
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
 export function handleTransferSingle(event: TransferSingleEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let operator = fetchAccount(event.params.operator.toHexString());
@@ -319,34 +378,17 @@ export function handleTransferSingle(event: TransferSingleEvent): void {
     event.params.amount
   );
 
-  /**
-   * Valorem Extension
-   * Checks if to/from addresses are not one of Valorem's or the Zero Address
-   * If neither are, records the amounts transferred in daily metrics
-   */
-  // get params
-  const fromAddress = event.params.from.toHexString();
-  const toAddress = event.params.to.toHexString();
-  const tokenId = event.params.id;
-  const amount = event.params.amount;
-
-  // check transfer isn't an OSE Write/Exercise/Redeem event (mint/OSE is receiver/burn)
-  const transferIsExternal =
-    fromAddress != ZERO_ADDRESS &&
-    toAddress != ZERO_ADDRESS &&
-    toAddress != event.address.toHexString();
-
-  if (transferIsExternal) {
-    // bind to OptionSettlementEngine to call view functions
-    const ose = OSEContract.bind(Address.fromBytes(event.address));
-    // get type of Token
-    const tokenType = ose.tokenType(tokenId);
-
-    handleERC1155TransferMetrics(tokenId, amount, event, tokenType);
-  }
+  // Valorem
+  handleERC1155TransferMetrics(
+    event.params.id,
+    event.params.amount,
+    from.id,
+    to.id,
+    event.address.toHexString(),
+    event.block.timestamp
+  );
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleTransferBatch(event: TransferBatchEvent): void {
   const contract = fetchERC1155(event.address.toHexString());
   const operator = fetchAccount(event.params.operator.toHexString());
@@ -354,9 +396,7 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
   const to = fetchAccount(event.params.to.toHexString());
   const ids = event.params.ids;
   const amounts = event.params.amounts;
-  // If this equality doesn't hold (some devs actually don't follow the ERC specifications) then we just can't make
-  // sense of what is happening. Don't try to make something out of stupid code, and just throw the event. This
-  // contract doesn't follow the standard anyway.
+
   if (ids.length == amounts.length) {
     for (let i = 0; i < ids.length; ++i) {
       registerTransfer(
@@ -369,91 +409,20 @@ export function handleTransferBatch(event: TransferBatchEvent): void {
         ids[i],
         amounts[i]
       );
-    }
-  }
 
-  /**
-   * Valorem Extension
-   * Checks if to/from addresses are not one of Valorem's or the Zero Address
-   * If neither are, records the amounts transferred in daily metrics
-   */
-  // get params
-  const fromAddress = event.params.from.toHexString();
-  const toAddress = event.params.to.toHexString();
-
-  // check transfer isn't an OSE Write/Exercise/Redeem event (mint/OSE is receiver/burn)
-  const transferIsExternal =
-    fromAddress != ZERO_ADDRESS &&
-    toAddress != ZERO_ADDRESS &&
-    toAddress != event.address.toHexString();
-
-  if (transferIsExternal) {
-    // bind to OptionSettlementEngine to call view functions
-    const ose = OSEContract.bind(Address.fromBytes(event.address));
-
-    // iterate through batch
-    for (let i = 0; i < ids.length; i++) {
-      const tokenId = ids[i];
-      const amount = amounts[i];
-
-      // get type of Token
-      const tokenType = ose.tokenType(ids[i]);
-
-      handleERC1155TransferMetrics(tokenId, amount, event, tokenType);
+      // Valorem
+      handleERC1155TransferMetrics(
+        ids[i],
+        amounts[i],
+        from.id,
+        to.id,
+        event.address.toHexString(),
+        event.block.timestamp
+      );
     }
   }
 }
 
-/**
- * Valorem Specific
- * Updates daily metrics when ERC-1155 Tokens are transferred
- * The to/from addresses are neither Valorem's or the Zero Address
- */
-function handleERC1155TransferMetrics(
-  tokenId: BigInt,
-  amount: BigInt,
-  event: ethereum.Event,
-  tokenType: number
-): void {
-  // load entities for calculating metrics
-  const optionType = OptionType.load(tokenId.toString())!;
-
-  let transferAmounts = new RedeemOrTransferAmounts();
-
-  // if option was transferred only update underlying token's metrics
-  if (tokenType == 1) {
-    const underlyingAmountTotal = optionType.underlyingAmount.times(amount);
-    transferAmounts.underlyingAmountTotal = underlyingAmountTotal;
-  }
-
-  // if claim was transferred update underlying and exercise tokens' metrics
-  if (tokenType == 2) {
-    // get ratio of corresponding options written/exercised
-    const ose = OSEContract.bind(Address.fromBytes(event.address));
-    const claimStruct = ose.claim(tokenId);
-    const amountWritten = claimStruct.amountWritten;
-    const amountExercised = claimStruct.amountExercised;
-
-    transferAmounts.underlyingAmountTotal = optionType.underlyingAmount.times(
-      amountWritten.minus(amountExercised)
-    );
-
-    transferAmounts.exerciseAmountTotal = optionType.exerciseAmount.times(
-      amountExercised
-    );
-  }
-
-  // update metrics
-  handleDailyMetrics(
-    "transfer",
-    event.block.timestamp,
-    optionType,
-    BigInt.fromI32(1),
-    transferAmounts
-  );
-}
-
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleApprovalForAll(event: ApprovalForAllEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let owner = fetchAccount(event.params.owner.toHexString());
@@ -463,7 +432,6 @@ export function handleApprovalForAll(event: ApprovalForAllEvent): void {
   delegation.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 export function handleURI(event: URIEvent): void {
   let contract = fetchERC1155(event.address.toHexString());
   let token = fetchERC1155Token(contract, event.params.id);
@@ -471,7 +439,6 @@ export function handleURI(event: URIEvent): void {
   token.save();
 }
 
-// https://github.com/OpenZeppelin/openzeppelin-subgraphs
 function registerTransfer(
   event: ethereum.Event,
   suffix: string,
@@ -535,23 +502,19 @@ function registerTransfer(
   token.save();
   ev.save();
 
-  /**
-   * Valorem Extension
-   * Sets the token type and relation of ERC-1155 Tokens on mint
-   */
+  // Valorem: Set the token type and relation of ERC-1155 Tokens on mint
   if (!token.optionType && !token.claim) {
     // bind to OptionSettlementEngine to call view functions
     const ose = OSEContract.bind(Address.fromBytes(event.address));
     // get type of Token
     const tokenType = ose.tokenType(id);
 
-    // option transfer
     if (tokenType == 1) {
+      // option transfer
       token.type = 1;
       token.optionType = id.toString();
-    }
-    // claim transfer
-    if (tokenType == 2) {
+    } else if (tokenType == 2) {
+      // claim transfer
       token.type = 2;
       token.claim = id.toString();
     }

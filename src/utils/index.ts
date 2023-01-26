@@ -12,52 +12,6 @@ export * from "./tokens";
 export * from "./constants";
 export * from "./price";
 
-/**
- * Retrieves or creates Daily Metrics for the entirety of the Option Settlement Engine
- * @param {BigInt} timestamp
- * @return {*}  {DayData}
- * Notice: Code adapted from https://github.com/Uniswap/v3-subgraph/blob/bf03f940f17c3d32ee58bd37386f26713cff21e2/src/utils/intervalUpdates.ts#L23
- */
-export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
-  const dayStart = getBeginningOfDayInSeconds(timestamp);
-  let dailyOSEMetrics = DayData.load(dayStart.toString());
-  if (dailyOSEMetrics) return dailyOSEMetrics;
-
-  dailyOSEMetrics = new DayData(dayStart.toString());
-  dailyOSEMetrics.date = dayStart.toI32();
-
-  // find the last recorded day metrics (past 30 days) to carry over TVL USD
-  let lastDayData: DayData | null = null;
-  for (let i = 1; i < 31; i++) {
-    const previousDayStart = getBeginningOfDayInSeconds(
-      timestamp.minus(BigInt.fromI32(i).times(SECONDS_IN_DAY))
-    );
-
-    const previousDaysMetrics = DayData.load(previousDayStart.toString());
-
-    if (previousDaysMetrics != null) {
-      // set variable and break search loop
-      lastDayData = previousDaysMetrics;
-      break;
-    }
-  }
-
-  dailyOSEMetrics.totalValueLockedUSD = lastDayData
-    ? lastDayData.totalValueLockedUSD
-    : BigDecimal.fromString("0"); // init with 0 for first event after contract deployment
-  dailyOSEMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
-  dailyOSEMetrics.save();
-
-  return dailyOSEMetrics;
-}
-
 export function fetchOptionSettlementEngine(contractAddress: string): OSE {
   let ose = OSE.load(contractAddress);
 
@@ -73,12 +27,6 @@ export function fetchOptionSettlementEngine(contractAddress: string): OSE {
   }
 
   return ose;
-}
-
-export const SECONDS_IN_DAY = BigInt.fromI32(86400);
-
-export function getBeginningOfDayInSeconds(timestamp: BigInt): BigInt {
-  return timestamp.div(SECONDS_IN_DAY).times(SECONDS_IN_DAY);
 }
 
 /**
@@ -199,11 +147,10 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
       underlyingTotalUSD
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
-  }
-  if (eventKind == "exercise") {
+  } else if (eventKind == "exercise") {
     // Update Exercised + Settled + Sum with notional value of Exercise Asset
     dailyOSEMetrics.notionalVolExercisedUSD = dailyOSEMetrics.notionalVolExercisedUSD.plus(
       exerciseTotalUSD
@@ -211,25 +158,23 @@ export function handleDailyMetrics(
     dailyOSEMetrics.notionalVolSettledUSD = dailyOSEMetrics.notionalVolSettledUSD.plus(
       exerciseTotalUSD
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-  if (eventKind == "redeem") {
+  } else if (eventKind == "redeem") {
     // Update Redeemed + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolRedeemedUSD = dailyOSEMetrics.notionalVolRedeemedUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-  }
-  if (eventKind == "transfer") {
+  } else if (eventKind == "transfer") {
     // Update Transferred + Sum with notional value of the position (Underlying & Exercise)
     dailyOSEMetrics.notionalVolTransferredUSD = dailyOSEMetrics.notionalVolTransferredUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
-    dailyOSEMetrics.notionalVolSumUSD = dailyOSEMetrics.notionalVolSumUSD.plus(
+    dailyOSEMetrics.notionalVolCoreSumUSD = dailyOSEMetrics.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD.plus(exerciseTotalUSD)
     );
   }
@@ -250,7 +195,7 @@ export function handleDailyMetrics(
     underlyingDaily.notionalVolSettled = underlyingDaily.notionalVolSettled.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
     underlyingDaily.notionalVolWrittenUSD = underlyingDaily.notionalVolWrittenUSD.plus(
@@ -259,12 +204,10 @@ export function handleDailyMetrics(
     underlyingDaily.notionalVolSettledUSD = underlyingDaily.notionalVolSettledUSD.plus(
       underlyingTotalUSD
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
-  }
-
-  if (eventKind == "exercise") {
+  } else if (eventKind == "exercise") {
     // Update TVL with *outgoing* underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
@@ -288,15 +231,13 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-
-  if (eventKind == "redeem") {
+  } else if (eventKind == "redeem") {
     // Update Underlying Token's TVL with outgoing underlying token values
     underlyingDaily.totalValueLocked = underlyingToken.totalValueLocked;
     underlyingDaily.totalValueLockedUSD = underlyingTVLUSDAfter;
@@ -309,10 +250,10 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
 
@@ -328,15 +269,13 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
-  }
-
-  if (eventKind == "transfer") {
+  } else if (eventKind == "transfer") {
     // Update Underlying Token's Transferred + Sum with notional value of underlying tokens transferred
     underlyingDaily.notionalVolTransferred = underlyingDaily.notionalVolTransferred.plus(
       underlyingAmountTotal
@@ -345,10 +284,10 @@ export function handleDailyMetrics(
       underlyingTotalUSD
     );
 
-    underlyingDaily.notionalVolSum = underlyingDaily.notionalVolSum.plus(
+    underlyingDaily.notionalVolCoreSum = underlyingDaily.notionalVolCoreSum.plus(
       underlyingAmountTotal
     );
-    underlyingDaily.notionalVolSumUSD = underlyingDaily.notionalVolSumUSD.plus(
+    underlyingDaily.notionalVolCoreSumUSD = underlyingDaily.notionalVolCoreSumUSD.plus(
       underlyingTotalUSD
     );
 
@@ -360,13 +299,70 @@ export function handleDailyMetrics(
       exerciseTotalUSD
     );
 
-    exerciseDaily.notionalVolSum = exerciseDaily.notionalVolSum.plus(
+    exerciseDaily.notionalVolCoreSum = exerciseDaily.notionalVolCoreSum.plus(
       exerciseAmountTotal
     );
-    exerciseDaily.notionalVolSumUSD = exerciseDaily.notionalVolSumUSD.plus(
+    exerciseDaily.notionalVolCoreSumUSD = exerciseDaily.notionalVolCoreSumUSD.plus(
       exerciseTotalUSD
     );
   }
   exerciseDaily.save();
   underlyingDaily.save();
+}
+
+/**
+ * The following code is credited to https://github.com/Uniswap/v3-subgraph,
+ * Included under GNU GPL v3 License
+ * Extended to support Valorem
+ */
+
+/**
+ * Retrieves or creates Daily Metrics for the entirety of the Option Settlement Engine
+ * @param {BigInt} timestamp
+ * @return {DayData}
+ */
+export function fetchDailyOSEMetrics(timestamp: BigInt): DayData {
+  const dayStart = getBeginningOfDayInSeconds(timestamp);
+  let dailyOSEMetrics = DayData.load(dayStart.toString());
+  if (dailyOSEMetrics) return dailyOSEMetrics;
+
+  dailyOSEMetrics = new DayData(dayStart.toString());
+  dailyOSEMetrics.date = dayStart.toI32();
+
+  // find the last recorded day metrics (past 30 days) to carry over TVL USD
+  let lastDayData: DayData | null = null;
+  for (let i = 1; i < 31; i++) {
+    const previousDayStart = getBeginningOfDayInSeconds(
+      timestamp.minus(BigInt.fromI32(i).times(SECONDS_IN_DAY))
+    );
+
+    const previousDaysMetrics = DayData.load(previousDayStart.toString());
+
+    if (previousDaysMetrics != null) {
+      // set variable and break search loop
+      lastDayData = previousDaysMetrics;
+      break;
+    }
+  }
+
+  dailyOSEMetrics.totalValueLockedUSD = lastDayData
+    ? lastDayData.totalValueLockedUSD
+    : BigDecimal.fromString("0"); // init with 0 for first event after contract deployment
+  dailyOSEMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolCoreSumUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
+  dailyOSEMetrics.save();
+
+  return dailyOSEMetrics;
+}
+
+export const SECONDS_IN_DAY = BigInt.fromI32(86400);
+
+export function getBeginningOfDayInSeconds(timestamp: BigInt): BigInt {
+  return timestamp.div(SECONDS_IN_DAY).times(SECONDS_IN_DAY);
 }

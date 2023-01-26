@@ -1,4 +1,9 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 
 import {
@@ -29,7 +34,7 @@ export function replaceURI(uri: string, identifier: BigInt): string {
  * Searches for and returns an ERC-1155 Contract, initializing a new one if not found
  * Note: Only the OptionSettlementEngine at this time
  * @param {string} contractAddress.toHexString()
- * @return {*}  {ERC1155Contract}
+ * @return {ERC1155Contract}
  */
 export function fetchERC1155(address: string): ERC1155Contract {
   let account = fetchAccount(address);
@@ -51,7 +56,7 @@ export function fetchERC1155(address: string): ERC1155Contract {
  * Searches for and returns an ERC-1155 Token, initializing a new one if not found
  * @param {ERC1155Contract} contract
  * @param {BigInt} identifier
- * @return {*}  {ERC1155Token}
+ * @return {ERC1155Token}
  */
 export function fetchERC1155Token(
   contract: ERC1155Contract,
@@ -78,7 +83,7 @@ export function fetchERC1155Token(
  * Searches for and returns the balance of a specific ERC-1155 for a given Account, initializing a new one if not found
  * @param {ERC1155Token} token: optionId or claimId
  * @param {(Account | null)} account
- * @return {*}  {ERC1155Balance}
+ * @return {ERC1155Balance}
  */
 export function fetchERC1155Balance(
   token: ERC1155Token,
@@ -105,7 +110,7 @@ export function fetchERC1155Balance(
  * @param {ERC1155Contract} contract: OSE Address
  * @param {Account} owner
  * @param {Account} operator
- * @return {*}  {ERC1155Operator}
+ * @return {ERC1155Operator}
  */
 export function fetchERC1155Operator(
   contract: ERC1155Contract,

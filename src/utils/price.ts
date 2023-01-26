@@ -1,3 +1,9 @@
+/**
+ * The following code is credited to https://github.com/Uniswap/v3-subgraph,
+ * Included under GNU GPL v3 License
+ * Extended to support Valorem
+ */
+
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";
 import { UniswapV3Pool } from "../../generated/OptionSettlementEngine/UniswapV3Pool";
@@ -24,8 +30,8 @@ const TOKEN_WHITELIST = [
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
   // TODO: REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ETH price 1250 USD
-  return BigDecimal.fromString("1250");
+  // ! hardcode ETH price 1550 USD
+  return BigDecimal.fromString("1550");
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -73,11 +79,10 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 
 // Derives token price in ETH terms by using either the token / WETH pool,
 // or a whitelisted tokens WETH pool.
-// Credit: https://github.com/Uniswap/v3-subgraph/blob/main/src/utils/pricing.ts#L74
 export function findEthPerToken(tokenAddress: string): BigDecimal {
   // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ERC20 price 1/1250 USD (stablecoins)
-  return BigDecimal.fromString("0.0008");
+  // ! hardcode ERC20 price 1/1550 USD (stablecoins)
+  return BigDecimal.fromString("0.00064");
 
   const uniswapFactory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)

@@ -1,4 +1,9 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
   getBeginningOfDayInSeconds,
@@ -13,7 +18,7 @@ import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
 /**
  *Searches for and returns an ERC-1155 Token, initializing a new one if not found
  * @param {string} tokenAddress.toHexString()
- * @return {*}  {Token}
+ * @return {Token}
  */
 export function fetchToken(address: string): Token {
   let token = Token.load(address);
@@ -39,7 +44,7 @@ export function fetchToken(address: string): Token {
  * Searches for and returns the Daily Metrics for a given Token, initializing a new one if not found
  * @param {string} tokenAddress
  * @param {BigInt} timestamp
- * @return {*}  {TokenDayData}
+ * @return {TokenDayData}
  */
 export function fetchDailyTokenMetrics(
   tokenAddress: string,
@@ -84,18 +89,18 @@ export function fetchDailyTokenMetrics(
   tokenMetrics.notionalVolExercised = BigInt.fromI32(0);
   tokenMetrics.notionalVolRedeemed = BigInt.fromI32(0);
   tokenMetrics.notionalVolTransferred = BigInt.fromI32(0);
-  tokenMetrics.notionalVolSum = BigInt.fromI32(0);
+  tokenMetrics.notionalVolCoreSum = BigInt.fromI32(0);
   tokenMetrics.notionalVolSettled = BigInt.fromI32(0);
-  tokenMetrics.notionalVolFeesAccrued = BigInt.fromI32(0);
-  tokenMetrics.notionalVolFeesSwept = BigInt.fromI32(0);
+  tokenMetrics.volFeesAccrued = BigInt.fromI32(0);
+  tokenMetrics.volFeesSwept = BigInt.fromI32(0);
   tokenMetrics.notionalVolWrittenUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolExercisedUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolRedeemedUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolTransferredUSD = BigDecimal.fromString("0");
-  tokenMetrics.notionalVolSumUSD = BigDecimal.fromString("0");
+  tokenMetrics.notionalVolCoreSumUSD = BigDecimal.fromString("0");
   tokenMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
-  tokenMetrics.notionalVolFeesAccruedUSD = BigDecimal.fromString("0");
-  tokenMetrics.notionalVolFeesSweptUSD = BigDecimal.fromString("0");
+  tokenMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
+  tokenMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
   tokenMetrics.token = token.id;
   tokenMetrics.dayData = dailyOSEMetrics.id;
   tokenMetrics.save();
