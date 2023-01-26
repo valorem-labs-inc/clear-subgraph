@@ -1,0 +1,6 @@
+{
+  "network": "mainnet",
+  "startBlock": 0,
+  "OptionsSettlementEngine": "0x0000000000000000000000000000000000000000",
+  "TokenURIGenerator": "0x0000000000000000000000000000000000000000"
+}
