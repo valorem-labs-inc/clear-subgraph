@@ -1,4 +1,8 @@
-// Credit to https://github.com/Uniswap/v3-subgraph, included under GNU GPL v3 License
+/**
+ * The following code is credited to https://github.com/Uniswap/v3-subgraph,
+ * Included under GNU GPL v3 License
+ * Extended to support Valorem
+ */
 
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";

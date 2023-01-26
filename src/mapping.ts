@@ -1,5 +1,3 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
-
 import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 
 import {
@@ -297,66 +295,6 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   dailyOSEMetrics.save();
 }
 
-export function handleTransferSingle(event: TransferSingleEvent): void {
-  let contract = fetchERC1155(event.address.toHexString());
-  let operator = fetchAccount(event.params.operator.toHexString());
-  let from = fetchAccount(event.params.from.toHexString());
-  let to = fetchAccount(event.params.to.toHexString());
-
-  registerTransfer(
-    event,
-    "",
-    contract,
-    operator,
-    from,
-    to,
-    event.params.id,
-    event.params.amount
-  );
-
-  handleERC1155TransferMetrics(
-    event.params.id,
-    event.params.amount,
-    from.id,
-    to.id,
-    event.address.toHexString(),
-    event.block.timestamp
-  );
-}
-
-export function handleTransferBatch(event: TransferBatchEvent): void {
-  const contract = fetchERC1155(event.address.toHexString());
-  const operator = fetchAccount(event.params.operator.toHexString());
-  const from = fetchAccount(event.params.from.toHexString());
-  const to = fetchAccount(event.params.to.toHexString());
-  const ids = event.params.ids;
-  const amounts = event.params.amounts;
-
-  if (ids.length == amounts.length) {
-    for (let i = 0; i < ids.length; ++i) {
-      registerTransfer(
-        event,
-        "/".concat(i.toString()),
-        contract,
-        operator,
-        from,
-        to,
-        ids[i],
-        amounts[i]
-      );
-
-      handleERC1155TransferMetrics(
-        ids[i],
-        amounts[i],
-        from.id,
-        to.id,
-        event.address.toHexString(),
-        event.block.timestamp
-      );
-    }
-  }
-}
-
 // checks if transfer is an OSE Write/Exercise/Redeem event (mint/burn)
 function isMintOrBurn(from: string, to: string): boolean {
   return from == ZERO_ADDRESS || to == ZERO_ADDRESS;
@@ -414,6 +352,74 @@ function handleERC1155TransferMetrics(
       BigInt.fromI32(1),
       transferAmounts
     );
+  }
+}
+
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
+
+export function handleTransferSingle(event: TransferSingleEvent): void {
+  let contract = fetchERC1155(event.address.toHexString());
+  let operator = fetchAccount(event.params.operator.toHexString());
+  let from = fetchAccount(event.params.from.toHexString());
+  let to = fetchAccount(event.params.to.toHexString());
+
+  registerTransfer(
+    event,
+    "",
+    contract,
+    operator,
+    from,
+    to,
+    event.params.id,
+    event.params.amount
+  );
+
+  // Valorem
+  handleERC1155TransferMetrics(
+    event.params.id,
+    event.params.amount,
+    from.id,
+    to.id,
+    event.address.toHexString(),
+    event.block.timestamp
+  );
+}
+
+export function handleTransferBatch(event: TransferBatchEvent): void {
+  const contract = fetchERC1155(event.address.toHexString());
+  const operator = fetchAccount(event.params.operator.toHexString());
+  const from = fetchAccount(event.params.from.toHexString());
+  const to = fetchAccount(event.params.to.toHexString());
+  const ids = event.params.ids;
+  const amounts = event.params.amounts;
+
+  if (ids.length == amounts.length) {
+    for (let i = 0; i < ids.length; ++i) {
+      registerTransfer(
+        event,
+        "/".concat(i.toString()),
+        contract,
+        operator,
+        from,
+        to,
+        ids[i],
+        amounts[i]
+      );
+
+      // Valorem
+      handleERC1155TransferMetrics(
+        ids[i],
+        amounts[i],
+        from.id,
+        to.id,
+        event.address.toHexString(),
+        event.block.timestamp
+      );
+    }
   }
 }
 
@@ -496,7 +502,7 @@ function registerTransfer(
   token.save();
   ev.save();
 
-  // Set the token type and relation of ERC-1155 Tokens on mint
+  // Valorem: Set the token type and relation of ERC-1155 Tokens on mint
   if (!token.optionType && !token.claim) {
     // bind to OptionSettlementEngine to call view functions
     const ose = OSEContract.bind(Address.fromBytes(event.address));

@@ -1,4 +1,8 @@
-// Credit to https://github.com/OpenZeppelin/openzeppelin-subgraphs, included under MIT License
+/**
+ * The following code is credited to https://github.com/OpenZeppelin/openzeppelin-subgraphs
+ * Included under MIT License
+ * Extended to support Valorem
+ */
 
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
