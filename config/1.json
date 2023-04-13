@@ -1,6 +1,6 @@
 {
   "network": "mainnet",
   "startBlock": 0,
-  "OptionSettlementEngineAddress": "0x0000000000000000000000000000000000000000",
+  "ValoremOptionsClearinghouseAddress": "0x0000000000000000000000000000000000000000",
   "TokenURIGeneratorAddress": "0x0000000000000000000000000000000000000000"
 }

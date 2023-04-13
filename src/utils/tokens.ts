@@ -7,13 +7,13 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
   getBeginningOfDayInSeconds,
-  fetchDailyOSEMetrics,
+  fetchDailyOCHMetrics,
   SECONDS_IN_DAY,
 } from ".";
 
 import { Token, TokenDayData } from "../../generated/schema";
 
-import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
+import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 
 /**
  *Searches for and returns an ERC-1155 Token, initializing a new one if not found
@@ -59,7 +59,7 @@ export function fetchDailyTokenMetrics(
 
   // init
   const token = fetchToken(tokenAddress);
-  const dailyOSEMetrics = fetchDailyOSEMetrics(timestamp);
+  const dailyOCHMetrics = fetchDailyOCHMetrics(timestamp);
 
   // find the last recorded day metrics to carry over TVL USD
   let lastDayData: TokenDayData | null = null;
@@ -102,7 +102,7 @@ export function fetchDailyTokenMetrics(
   tokenMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
   tokenMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
   tokenMetrics.token = token.id;
-  tokenMetrics.dayData = dailyOSEMetrics.id;
+  tokenMetrics.dayData = dailyOCHMetrics.id;
   tokenMetrics.save();
 
   return tokenMetrics;

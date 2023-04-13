@@ -14,7 +14,7 @@ import {
   ERC1155Operator,
 } from "../../generated/schema";
 
-import { IERC1155MetadataURI } from "../../generated/OptionSettlementEngine/IERC1155MetadataURI";
+import { IERC1155MetadataURI } from "../../generated/ValoremOptionsClearinghouse/IERC1155MetadataURI";
 
 import { constants } from "../constants";
 
@@ -32,7 +32,7 @@ export function replaceURI(uri: string, identifier: BigInt): string {
 
 /**
  * Searches for and returns an ERC-1155 Contract, initializing a new one if not found
- * Note: Only the OptionSettlementEngine at this time
+ * Note: Only the ValoremOptionsClearinghouse at this time
  * @param {string} contractAddress.toHexString()
  * @return {ERC1155Contract}
  */
@@ -107,7 +107,7 @@ export function fetchERC1155Balance(
 
 /**
  * Searches for and returns an ERC-1155 Operator for a given Contract & Account, initializing a new one if not found
- * @param {ERC1155Contract} contract: OSE Address
+ * @param {ERC1155Contract} contract: OCH Address
  * @param {Account} owner
  * @param {Account} operator
  * @return {ERC1155Operator}

@@ -3,11 +3,11 @@ schema:
   file: ./schema.graphql
 dataSources:
   - kind: ethereum
-    name: OptionSettlementEngine
+    name: ValoremOptionsClearinghouse
     network: {{network}}
     source:
-      address: "{{OptionSettlementEngineAddress}}"
-      abi: OptionSettlementEngine
+      address: "{{ValoremOptionsClearinghouseAddress}}"
+      abi: ValoremOptionsClearinghouse
       startBlock: {{startBlock}}
     mapping:
       kind: ethereum/events
@@ -26,8 +26,8 @@ dataSources:
         - TransferSingle
         - URI
       abis:
-        - name: OptionSettlementEngine
-          file: ./abis/OptionSettlementEngine.json
+        - name: ValoremOptionsClearinghouse
+          file: ./abis/ValoremOptionsClearinghouse.json
         - name: IERC1155MetadataURI
           file: ./abis/IERC1155MetadataURI.json
         - name: UniswapV3Factory

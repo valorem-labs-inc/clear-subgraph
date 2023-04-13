@@ -9,7 +9,7 @@ import {
 } from "../generated/schema";
 
 import {
-  OptionSettlementEngine as OSEContract,
+  ValoremOptionsClearinghouse as OCHContract,
   ApprovalForAll as ApprovalForAllEvent,
   ClaimRedeemed as ClaimRedeemedEvent,
   FeeAccrued as FeeAccruedEvent,
@@ -22,7 +22,7 @@ import {
   URI as URIEvent,
   FeeToUpdated as FeeToUpdatedEvent,
   FeeSwitchUpdated as FeeSwitchUpdatedEvent,
-} from "../generated/OptionSettlementEngine/OptionSettlementEngine";
+} from "../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
 
 import { fetchAccount } from "./fetch/account";
 import {
@@ -34,10 +34,10 @@ import {
 } from "./fetch/erc1155";
 
 import {
-  fetchOptionSettlementEngine,
+  fetchValoremOptionsClearinghouse,
   fetchToken,
   fetchDailyTokenMetrics,
-  fetchDailyOSEMetrics,
+  fetchDailyOCHMetrics,
   handleDailyMetrics,
   RedeemOrTransferAmounts,
   exponentToBigDecimal,
@@ -45,7 +45,7 @@ import {
   ZERO_ADDRESS,
 } from "./utils";
 
-import { ERC20 } from "../generated/OptionSettlementEngine/ERC20";
+import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
 
 export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get params
@@ -215,7 +215,7 @@ export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
   let isEnabled = event.params.enabled;
   let feeTo = event.params.feeTo.toHexString();
 
-  let feeSwitch = fetchOptionSettlementEngine(event.address.toHexString());
+  let feeSwitch = fetchValoremOptionsClearinghouse(event.address.toHexString());
   feeSwitch.feesEnabled = isEnabled;
   feeSwitch.feeToAddress = feeTo;
   feeSwitch.save();
@@ -224,7 +224,7 @@ export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
 export function handleFeeToUpdated(event: FeeToUpdatedEvent): void {
   let newFeeTo = event.params.newFeeTo.toHexString();
 
-  let feeSwitch = fetchOptionSettlementEngine(event.address.toHexString());
+  let feeSwitch = fetchValoremOptionsClearinghouse(event.address.toHexString());
   feeSwitch.feeToAddress = newFeeTo;
   feeSwitch.save();
 }
@@ -256,11 +256,11 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
   tokenDaily.save();
 
-  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.volFeesAccruedUSD = dailyOSEMetrics.volFeesAccruedUSD.plus(
+  const dailyOCHMetrics = fetchDailyOCHMetrics(event.block.timestamp);
+  dailyOCHMetrics.volFeesAccruedUSD = dailyOCHMetrics.volFeesAccruedUSD.plus(
     feeValueUSD
   );
-  dailyOSEMetrics.save();
+  dailyOCHMetrics.save();
 }
 
 export function handleFeeSwept(event: FeeSweptEvent): void {
@@ -288,14 +288,14 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
   tokenDaily.save();
 
-  const dailyOSEMetrics = fetchDailyOSEMetrics(event.block.timestamp);
-  dailyOSEMetrics.volFeesSweptUSD = dailyOSEMetrics.volFeesSweptUSD.plus(
+  const dailyOCHMetrics = fetchDailyOCHMetrics(event.block.timestamp);
+  dailyOCHMetrics.volFeesSweptUSD = dailyOCHMetrics.volFeesSweptUSD.plus(
     feeValueUSD
   );
-  dailyOSEMetrics.save();
+  dailyOCHMetrics.save();
 }
 
-// checks if transfer is an OSE Write/Exercise/Redeem event (mint/burn)
+// checks if transfer is an OCH Write/Exercise/Redeem event (mint/burn)
 function isMintOrBurn(from: string, to: string): boolean {
   return from == ZERO_ADDRESS || to == ZERO_ADDRESS;
 }
@@ -313,11 +313,11 @@ function handleERC1155TransferMetrics(
   eventTimestamp: BigInt
 ): void {
   if (!isMintOrBurn(fromAddress, toAddress)) {
-    // bind to OptionSettlementEngine to call view functions
-    const ose = OSEContract.bind(Address.fromString(eventAddress));
+    // bind to ValoremOptionsClearinghouse to call view functions
+    const och = OCHContract.bind(Address.fromString(eventAddress));
 
     // get type of Token
-    const tokenType = ose.tokenType(tokenId);
+    const tokenType = och.tokenType(tokenId);
 
     // load entities for calculating metrics
     const optionType = OptionType.load(tokenId.toString())!;
@@ -331,7 +331,7 @@ function handleERC1155TransferMetrics(
       transferAmounts.underlyingAmountTotal = underlyingAmountTotal;
     } else if (tokenType == 2) {
       // get ratio of corresponding options written/exercised
-      const claimStruct = ose.claim(tokenId);
+      const claimStruct = och.claim(tokenId);
       const amountWritten = claimStruct.amountWritten;
       const amountExercised = claimStruct.amountExercised;
 
@@ -504,10 +504,10 @@ function registerTransfer(
 
   // Valorem: Set the token type and relation of ERC-1155 Tokens on mint
   if (!token.optionType && !token.claim) {
-    // bind to OptionSettlementEngine to call view functions
-    const ose = OSEContract.bind(Address.fromBytes(event.address));
+    // bind to ValoremOptionsClearinghouse to call view functions
+    const och = OCHContract.bind(Address.fromBytes(event.address));
     // get type of Token
-    const tokenType = ose.tokenType(id);
+    const tokenType = och.tokenType(id);
 
     if (tokenType == 1) {
       // option transfer
