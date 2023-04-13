@@ -147,6 +147,62 @@
       {
         "indexed": true,
         "internalType": "uint256",
+        "name": "optionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint96",
+        "name": "bucketIndex",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint112",
+        "name": "amountAssigned",
+        "type": "uint112"
+      }
+    ],
+    "name": "BucketAssignedExercise",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "optionId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "claimId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint96",
+        "name": "bucketIndex",
+        "type": "uint96"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint112",
+        "name": "amount",
+        "type": "uint112"
+      }
+    ],
+    "name": "BucketWrittenInto",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
         "name": "claimId",
         "type": "uint256"
       },
@@ -526,7 +582,7 @@
           },
           { "internalType": "uint256", "name": "optionId", "type": "uint256" }
         ],
-        "internalType": "struct IOptionSettlementEngine.Claim",
+        "internalType": "struct IValoremOptionsClearinghouse.Claim",
         "name": "claimInfo",
         "type": "tuple"
       }
@@ -655,7 +711,7 @@
           },
           { "internalType": "uint96", "name": "nextClaimKey", "type": "uint96" }
         ],
-        "internalType": "struct IOptionSettlementEngine.Option",
+        "internalType": "struct IValoremOptionsClearinghouse.Option",
         "name": "optionInfo",
         "type": "tuple"
       }
@@ -692,7 +748,7 @@
             "type": "int256"
           }
         ],
-        "internalType": "struct IOptionSettlementEngine.Position",
+        "internalType": "struct IValoremOptionsClearinghouse.Position",
         "name": "positionInfo",
         "type": "tuple"
       }
@@ -799,7 +855,7 @@
     "name": "tokenType",
     "outputs": [
       {
-        "internalType": "enum IOptionSettlementEngine.TokenType",
+        "internalType": "enum IValoremOptionsClearinghouse.TokenType",
         "name": "typeOfToken",
         "type": "uint8"
       }
