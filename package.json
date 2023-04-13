@@ -9,7 +9,7 @@
     "deploy:mainnet": "yarn prepare:mainnet && graph deploy --product hosted-service TBD",
     "deploy:goerli": "yarn prepare:goerli && graph deploy --product hosted-service nickadamson/test-goerli2",
     "deploy:arbitrum-one": "yarn prepare:arbitrum-one && graph deploy --product hosted-service TBD",
-    "deploy:arbitrum-goerli": "yarn prepare:arbitrum-goerli && graph deploy --product hosted-service TBD",
+    "deploy:arbitrum-goerli": "yarn prepare:arbitrum-goerli && graph deploy --product hosted-service nickadamson/ch-arb-goerli",
     "deploy:all": "yarn build && yarn deploy:goerli && yarn deploy:arbitrum-goerli && yarn deploy:mainnet && yarn deploy:arbitrum-one",
     "codegen": "graph codegen",
     "build": "graph codegen && graph build",
