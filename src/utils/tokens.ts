@@ -48,7 +48,8 @@ export function fetchToken(address: string): Token {
  */
 export function fetchDailyTokenMetrics(
   tokenAddress: string,
-  timestamp: BigInt
+  timestamp: BigInt,
+  ochAddress: string
 ): TokenDayData {
   // find
   const dayStart = getBeginningOfDayInSeconds(timestamp);
@@ -59,7 +60,7 @@ export function fetchDailyTokenMetrics(
 
   // init
   const token = fetchToken(tokenAddress);
-  const dailyOCHMetrics = fetchDailyOCHMetrics(timestamp);
+  const dailyOCHMetrics = fetchDailyOCHMetrics(timestamp, ochAddress);
 
   // find the last recorded day metrics to carry over TVL USD
   let lastDayData: TokenDayData | null = null;

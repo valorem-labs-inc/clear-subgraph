@@ -71,6 +71,7 @@ export function handleDailyMetrics(
   timestamp: BigInt,
   optionType: OptionType,
   quantity: BigInt,
+  ochAddress: string,
   redeemOrTransferAmounts: RedeemOrTransferAmounts | null
 ): void {
   // get tokens
@@ -108,9 +109,17 @@ export function handleDailyMetrics(
     .div(exponentToBigDecimal(BigInt.fromI64(exerciseToken.decimals)));
 
   // get daily metrics
-  const dailyOCHMetrics = fetchDailyOCHMetrics(timestamp);
-  const underlyingDaily = fetchDailyTokenMetrics(underlyingToken.id, timestamp);
-  const exerciseDaily = fetchDailyTokenMetrics(exerciseToken.id, timestamp);
+  const dailyOCHMetrics = fetchDailyOCHMetrics(timestamp, ochAddress);
+  const underlyingDaily = fetchDailyTokenMetrics(
+    underlyingToken.id,
+    timestamp,
+    ochAddress
+  );
+  const exerciseDaily = fetchDailyTokenMetrics(
+    exerciseToken.id,
+    timestamp,
+    ochAddress
+  );
 
   // save previous TVLs
   const dailyTVLUSDBefore = dailyOCHMetrics.totalValueLockedUSD;
@@ -321,7 +330,10 @@ export function handleDailyMetrics(
  * @param {BigInt} timestamp
  * @return {DayData}
  */
-export function fetchDailyOCHMetrics(timestamp: BigInt): DayData {
+export function fetchDailyOCHMetrics(
+  timestamp: BigInt,
+  ochAddress: string
+): DayData {
   const dayStart = getBeginningOfDayInSeconds(timestamp);
   let dailyOCHMetrics = DayData.load(dayStart.toString());
   if (dailyOCHMetrics) return dailyOCHMetrics;
@@ -356,6 +368,7 @@ export function fetchDailyOCHMetrics(timestamp: BigInt): DayData {
   dailyOCHMetrics.notionalVolSettledUSD = BigDecimal.fromString("0");
   dailyOCHMetrics.volFeesAccruedUSD = BigDecimal.fromString("0");
   dailyOCHMetrics.volFeesSweptUSD = BigDecimal.fromString("0");
+  dailyOCHMetrics.och = ochAddress;
   dailyOCHMetrics.save();
 
   return dailyOCHMetrics;

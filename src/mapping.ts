@@ -46,6 +46,7 @@ import {
 } from "./utils";
 
 import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
+import { fetchTransaction } from "./fetch/transaction";
 
 export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get params
@@ -57,7 +58,6 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   const exerciseTimestamp = event.params.exerciseTimestamp;
   const expiryTimestamp = event.params.expiryTimestamp;
   const creatorAddress = event.transaction.from.toHexString();
-  const txHash = event.transaction.hash.toHexString();
 
   // get entities
   const underlyingToken = fetchToken(underlyingAddress);
@@ -67,7 +67,7 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // initialize new OptionType
   const optionType = new OptionType(optionId);
   optionType.creator = creator.id;
-  optionType.createTx = txHash;
+  optionType.createTx = fetchTransaction(event).id;
   optionType.exerciseTimestamp = exerciseTimestamp;
   optionType.expiryTimestamp = expiryTimestamp;
   optionType.underlyingAsset = underlyingToken.id;
@@ -75,6 +75,7 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   optionType.exerciseAsset = exerciseToken.id;
   optionType.exerciseAmount = exerciseAmount;
   optionType.amountWritten = BigInt.fromI32(0);
+  optionType.amountExercised = BigInt.fromI32(0);
   optionType.claims = new Array<string>();
   optionType.save();
 }
@@ -85,7 +86,6 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   const claimId = event.params.claimId.toString();
   const numberOfOptions = event.params.amount;
   const writerAddress = event.params.writer.toHexString();
-  const txHash = event.transaction.hash.toHexString();
 
   // get entities
   const optionType = OptionType.load(optionId)!;
@@ -95,7 +95,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   // initialize new Claim
   const claim = new Claim(claimId);
   claim.writer = writer.id;
-  claim.writeTx = txHash;
+  claim.writeTx = fetchTransaction(event).id;
   claim.amountWritten = numberOfOptions;
   claim.redeemed = false;
   claim.optionType = optionType.id;
@@ -121,6 +121,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
     event.block.timestamp,
     optionType,
     numberOfOptions,
+    event.address.toHexString(),
     null
   );
 }
@@ -159,6 +160,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
     event.block.timestamp,
     optionType,
     numberOfOptions,
+    event.address.toHexString(),
     null
   );
 }
@@ -170,7 +172,6 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   const underlyingAmountRedeemed = event.params.underlyingAmountRedeemed;
   const exerciseAmountRedeemed = event.params.exerciseAmountRedeemed;
   const redeemerAddress = event.params.redeemer.toHexString();
-  const txHash = event.transaction.hash.toHexString();
 
   // get entities
   const optionType = OptionType.load(optionId)!;
@@ -182,7 +183,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
   // update claim
   claim.redeemed = true;
   claim.redeemer = redeemer.id;
-  claim.redeemTx = txHash;
+  claim.redeemTx = fetchTransaction(event).id;
   claim.save();
 
   // update tokens' TVL
@@ -207,6 +208,7 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
     event.block.timestamp,
     optionType,
     BigInt.fromI32(0),
+    event.address.toHexString(),
     redeemAmounts
   );
 }
@@ -248,7 +250,8 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   // update daily metrics
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
-    event.block.timestamp
+    event.block.timestamp,
+    event.address.toHexString()
   );
   tokenDaily.volFeesAccrued = tokenDaily.volFeesAccrued.plus(
     event.params.amount
@@ -256,7 +259,10 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
   tokenDaily.save();
 
-  const dailyOCHMetrics = fetchDailyOCHMetrics(event.block.timestamp);
+  const dailyOCHMetrics = fetchDailyOCHMetrics(
+    event.block.timestamp,
+    event.address.toHexString()
+  );
   dailyOCHMetrics.volFeesAccruedUSD = dailyOCHMetrics.volFeesAccruedUSD.plus(
     feeValueUSD
   );
@@ -282,13 +288,17 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
   // handle daily metrics
   const tokenDaily = fetchDailyTokenMetrics(
     event.params.asset.toHexString(),
-    event.block.timestamp
+    event.block.timestamp,
+    event.address.toHexString()
   );
   tokenDaily.volFeesSwept = tokenDaily.volFeesSwept.plus(event.params.amount);
   tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
   tokenDaily.save();
 
-  const dailyOCHMetrics = fetchDailyOCHMetrics(event.block.timestamp);
+  const dailyOCHMetrics = fetchDailyOCHMetrics(
+    event.block.timestamp,
+    event.address.toHexString()
+  );
   dailyOCHMetrics.volFeesSweptUSD = dailyOCHMetrics.volFeesSweptUSD.plus(
     feeValueUSD
   );
@@ -350,6 +360,7 @@ function handleERC1155TransferMetrics(
       eventTimestamp,
       optionType,
       BigInt.fromI32(1),
+      eventAddress,
       transferAmounts
     );
   }

@@ -42,12 +42,11 @@ export function fetchERC1155(address: string): ERC1155Contract {
 
   if (contract == null) {
     contract = new ERC1155Contract(account.id);
+    contract.asAccount = account.id;
+    account.asERC1155 = contract.id;
     contract.save();
   }
-  contract.asAccount = account.id;
-  account.asERC1155 = contract.id;
   contract.save();
-  account.save();
 
   return contract;
 }
