@@ -2,6 +2,15 @@
   "name": "valorem-subgraph",
   "license": "MIT",
   "scripts": {
+    "prepare:mainnet": "mustache config/1.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:goerli": "mustache config/5.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:arbitrum-one": "mustache config/42161.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:arbitrum-goerli": "mustache config/421613.json subgraph.template.yaml > subgraph.yaml",
+    "deploy:mainnet": "pnpm prepare:mainnet && graph deploy --product hosted-service TBD",
+    "deploy:goerli": "pnpm prepare:goerli && graph deploy --product hosted-service nickadamson/test-goerli2",
+    "deploy:arbitrum-one": "pnpm prepare:arbitrum-one && graph deploy --product hosted-service TBD",
+    "deploy:arbitrum-goerli": "pnpm prepare:arbitrum-goerli && graph deploy --product hosted-service nickadamson/ch-arb-goerli",
+    "deploy:all": "pnpm build && pnpm deploy:goerli && pnpm deploy:arbitrum-goerli && pnpm deploy:mainnet && pnpm deploy:arbitrum-one",
     "codegen": "graph codegen",
     "build": "graph codegen && graph build",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ valorem-subgraph-goerli",
@@ -10,10 +19,10 @@
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 valorem-subgraph"
   },
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.29.0",
-    "@graphprotocol/graph-ts": "0.26.0"
+    "@graphprotocol/graph-cli": "^0.46.1",
+    "@graphprotocol/graph-ts": "^0.29.3"
   },
   "devDependencies": {
-    "@amxx/graphprotocol-utils": "^0.1.0"
+    "mustache": "^4.2.0"
   }
 }

@@ -5,9 +5,9 @@
  */
 
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-import { UniswapV3Factory } from "../../generated/OptionSettlementEngine/UniswapV3Factory";
-import { UniswapV3Pool } from "../../generated/OptionSettlementEngine/UniswapV3Pool";
-import { ERC20 } from "../../generated/OptionSettlementEngine/ERC20";
+import { UniswapV3Factory } from "../../generated/ValoremOptionsClearinghouse/UniswapV3Factory";
+import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/UniswapV3Pool";
+import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import { ZERO_ADDRESS } from "./constants";
 
 const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6";

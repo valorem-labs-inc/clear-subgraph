@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: ValoremOptionsClearinghouse
-    network: arbitrum-goerli
+    network: {{network}}
     source:
-      address: "0x7513F78472606625A9B505912e3C80762f6C9Efb"
+      address: "{{ValoremOptionsClearinghouseAddress}}"
       abi: ValoremOptionsClearinghouse
-      startBlock: 14945620
+      startBlock: {{startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
