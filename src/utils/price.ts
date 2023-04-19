@@ -29,9 +29,6 @@ const TOKEN_WHITELIST = [
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
-  // TODO: REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ETH price 1550 USD
-  return BigDecimal.fromString("1550");
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -63,9 +60,9 @@ export function getEthPriceInUSD(): BigDecimal {
 }
 
 export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
-  const ethPriceUSD = getEthPriceInUSD(); // ! Hardcoded
+  const ethPriceUSD = getEthPriceInUSD();
 
-  const derivedEth = findEthPerToken(tokenAddress); // ! Hardcoded
+  const derivedEth = findEthPerToken(tokenAddress);
 
   if (
     tokenAddress.toLowerCase() == WETH_ADDRESS.toLowerCase() ||
@@ -80,10 +77,6 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 // Derives token price in ETH terms by using either the token / WETH pool,
 // or a whitelisted tokens WETH pool.
 export function findEthPerToken(tokenAddress: string): BigDecimal {
-  // TODO REVERT FOR MAINNET. GOERLI POOLS ARE INACCURATE
-  // ! hardcode ERC20 price 1/1550 USD (stablecoins)
-  return BigDecimal.fromString("0.00064");
-
   const uniswapFactory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
