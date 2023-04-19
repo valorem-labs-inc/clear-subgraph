@@ -10,18 +10,18 @@ import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/Unisw
 import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import { ZERO_ADDRESS } from "./constants";
 
-const WETH_ADDRESS = "0xe39Ab88f8A4777030A534146A9Ca3B52bd5D43A3"
+const WETH_ADDRESS = "{{WETH}}"
 
-const UNISWAP_V3_FACTORY_ADDRESS = "0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6"
+const UNISWAP_V3_FACTORY_ADDRESS = "{{UniswapV3FactoryAddress}}"
 
 let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
 
 const TOKEN_WHITELIST = [
   WETH_ADDRESS,
-  "0x8FB1E3fC51F3b789dED7557E680551d93Ea9d892", 
-  "0xf8Fe24D6Ea205dd5057aD2e5FE5e313AeFd52f2e", 
-  "0x5337deF26Da2506e08e37682b0d6E50b26a704BB", 
-  "0xb795f8278458443f6C43806C020a84EB5109403c",
+  "{{USDC}}", 
+  "{{WBTC}}", 
+  "{{GMX}}", 
+  "{{MAGIC}}",
 ];
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
