@@ -10,21 +10,22 @@ import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/Unisw
 import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import { ZERO_ADDRESS } from "./constants";
 
-const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6";
+const WETH_ADDRESS = "0xe39Ab88f8A4777030A534146A9Ca3B52bd5D43A3";
 
-const UNISWAP_V3_FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+// TODO: use the correct factory address for mainnet release
+// arbitrum one
+// const UNISWAP_V3_FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+// arb goerli
+const UNISWAP_V3_FACTORY_ADDRESS = "0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6";
 
 let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
 
 const TOKEN_WHITELIST = [
   WETH_ADDRESS,
-  "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60", // DAI
-  "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", // USDC
-  "0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb", // cDAI
-  "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", // cUSDC
-  "0xe16C7165C8FeA64069802aE4c4c9C320783f2b6e", // COMP
-  "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI
-  "0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05", // WBTC
+  "0x8FB1E3fC51F3b789dED7557E680551d93Ea9d892", // USDC
+  "0xf8Fe24D6Ea205dd5057aD2e5FE5e313AeFd52f2e", // WBTC
+  "0x5337deF26Da2506e08e37682b0d6E50b26a704BB", // GMX
+  "0xb795f8278458443f6C43806C020a84EB5109403c", // MAGIC
 ];
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
@@ -33,22 +34,22 @@ export function getEthPriceInUSD(): BigDecimal {
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
 
-  let daiPoolAddress = factory.getPool(
+  let usdcPoolAddress = factory.getPool(
     Address.fromString(WETH_ADDRESS),
-    Address.fromString("0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60"),
+    Address.fromString(TOKEN_WHITELIST[1]),
     3000
   );
 
-  let daiPool = UniswapV3Pool.bind(daiPoolAddress);
+  let usdcPool = UniswapV3Pool.bind(usdcPoolAddress);
 
   const tokenPrices = sqrtPriceX96ToTokenPrices(
-    daiPool.slot0().value0,
-    ERC20.bind(daiPool.token0()),
-    ERC20.bind(daiPool.token1())
+    usdcPool.slot0().value0,
+    ERC20.bind(usdcPool.token0()),
+    ERC20.bind(usdcPool.token1())
   );
 
   if (
-    daiPool
+    usdcPool
       .token0()
       .toHexString()
       .toLowerCase() == WETH_ADDRESS.toLowerCase()
