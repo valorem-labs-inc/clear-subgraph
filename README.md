@@ -1,6 +1,6 @@
 # Valorem Protocol Subgraph 
 
-Subgraph for the Valorem Options Protocol. This can be used to query various indexed structures 
+Subgraph for Valorem Clear. This can be used to query various indexed structures 
 providing information about the protocol and it's usage.
 
 ## Project Structure
