@@ -32,7 +32,7 @@ const TOKEN_WHITELIST = [
 let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
-export function getEthPriceInUSD(): BigDecimal {
+function getEthPriceInUSD(): BigDecimal {
   // hardcode goerli price
   if (isTestnet) return BigDecimal.fromString("1550");
 
@@ -88,7 +88,7 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 
 // Derives token price in ETH terms by using either the token / WETH pool,
 // or a whitelisted tokens WETH pool.
-export function findEthPerToken(tokenAddress: string): BigDecimal {
+function findEthPerToken(tokenAddress: string): BigDecimal {
   // hardcode goerli price
   if (isTestnet) return BigDecimal.fromString("0.00064");
 
