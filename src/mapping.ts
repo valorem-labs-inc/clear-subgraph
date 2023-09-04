@@ -239,8 +239,8 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
     .div(exponentToBigDecimal(assetDecimals));
 
   // get market prices
-  let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
-  let feeValueUSD = assetPrice.times(formattedAmount);
+  //   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
+  //   let feeValueUSD = assetPrice.times(formattedAmount);
 
   // update token entity
   const token = fetchToken(event.params.asset.toHexString());
@@ -256,16 +256,16 @@ export function handleFeeAccrued(event: FeeAccruedEvent): void {
   tokenDaily.volFeesAccrued = tokenDaily.volFeesAccrued.plus(
     event.params.amount
   );
-  tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
+  //   tokenDaily.volFeesAccruedUSD = tokenDaily.volFeesAccruedUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOCHMetrics = fetchDailyOCHMetrics(
     event.block.timestamp,
     event.address.toHexString()
   );
-  dailyOCHMetrics.volFeesAccruedUSD = dailyOCHMetrics.volFeesAccruedUSD.plus(
-    feeValueUSD
-  );
+  //   dailyOCHMetrics.volFeesAccruedUSD = dailyOCHMetrics.volFeesAccruedUSD.plus(
+  //     feeValueUSD
+  //   );
   dailyOCHMetrics.save();
 }
 
@@ -277,8 +277,8 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
     .div(exponentToBigDecimal(assetDecimals));
 
   // get market prices
-  let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
-  let feeValueUSD = assetPrice.times(formattedAmount);
+  //   let assetPrice = getTokenPriceUSD(event.params.asset.toHexString());
+  //   let feeValueUSD = assetPrice.times(formattedAmount);
 
   // update token entity
   const token = fetchToken(event.params.asset.toHexString());
@@ -292,16 +292,16 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
     event.address.toHexString()
   );
   tokenDaily.volFeesSwept = tokenDaily.volFeesSwept.plus(event.params.amount);
-  tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
+  //   tokenDaily.volFeesSweptUSD = tokenDaily.volFeesSweptUSD.plus(feeValueUSD);
   tokenDaily.save();
 
   const dailyOCHMetrics = fetchDailyOCHMetrics(
     event.block.timestamp,
     event.address.toHexString()
   );
-  dailyOCHMetrics.volFeesSweptUSD = dailyOCHMetrics.volFeesSweptUSD.plus(
-    feeValueUSD
-  );
+  //   dailyOCHMetrics.volFeesSweptUSD = dailyOCHMetrics.volFeesSweptUSD.plus(
+  //     feeValueUSD
+  //   );
   dailyOCHMetrics.save();
 }
 
