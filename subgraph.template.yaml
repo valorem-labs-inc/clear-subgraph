@@ -39,6 +39,10 @@ dataSources:
       eventHandlers:
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
+        - event: BucketAssignedExercise(indexed uint256,indexed uint96,uint112)
+          handler: handleBucketAssignedExercise
+        - event: BucketWrittenInto(indexed uint256,indexed uint256,indexed uint96,uint112)
+          handler: handleBucketWrittenInto
         - event: ClaimRedeemed(indexed uint256,indexed uint256,indexed address,uint256,uint256)
           handler: handleClaimRedeemed
         - event: FeeAccrued(indexed uint256,indexed address,indexed address,uint256)

@@ -22,6 +22,8 @@ import {
   URI as URIEvent,
   FeeToUpdated as FeeToUpdatedEvent,
   FeeSwitchUpdated as FeeSwitchUpdatedEvent,
+  BucketAssignedExercise as BucketAssignedExerciseEvent,
+  BucketWrittenInto as BucketWrittenIntoEvent,
 } from "../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
 
 import { fetchAccount } from "./fetch/account";
@@ -211,6 +213,30 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
     event.address.toHexString(),
     redeemAmounts
   );
+}
+
+export function handleBucketAssignedExercise(
+  event: BucketAssignedExerciseEvent
+): void {
+  // get params
+  let optionId = event.params.optionId.toString();
+  let bucketIndex = event.params.bucketIndex;
+  let amountAssigned = event.params.amountAssigned;
+
+  // get entities
+  const optionType = OptionType.load(optionId)!;
+}
+
+export function handleBucketWrittenInto(event: BucketWrittenIntoEvent): void {
+  // get params
+  let optionId = event.params.optionId.toString();
+  let claimId = event.params.claimId.toString();
+  let bucketIndex = event.params.bucketIndex;
+  let amount = event.params.amount;
+
+  // get entities
+  const optionType = OptionType.load(optionId)!;
+  const claim = Claim.load(claimId)!;
 }
 
 export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {
