@@ -10,22 +10,23 @@ import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/Unisw
 import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import { ZERO_ADDRESS } from "./constants";
 
-const WETH_ADDRESS = "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6";
+const UNISWAP_V3_FACTORY_ADDRESS = "{{UNISWAP_V3_FACTORY_ADDRESS}}";
 
-const UNISWAP_V3_FACTORY_ADDRESS = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
-
-let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
+const WETH_ADDRESS = "{{WETH_ADDRESS}}";
+const USDC_ADDRESS = "{{USDC_ADDRESS}}";
+const MAGIC_ADDRESS = "{{MAGIC_ADDRESS}}";
+const GMX_ADDRESS = "{{GMX_ADDRESS}}";
+const WBTC_ADDRESS = "{{WBTC_ADDRESS}}";
 
 const TOKEN_WHITELIST = [
   WETH_ADDRESS,
-  "0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60", // DAI
-  "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", // USDC
-  "0x822397d9a55d0fefd20F5c4bCaB33C5F65bd28Eb", // cDAI
-  "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", // cUSDC
-  "0xe16C7165C8FeA64069802aE4c4c9C320783f2b6e", // COMP
-  "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI
-  "0xC04B0d3107736C32e19F1c62b2aF67BE61d63a05", // WBTC
+  USDC_ADDRESS,
+  MAGIC_ADDRESS,
+  GMX_ADDRESS,
+  WBTC_ADDRESS,
 ];
+
+let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {

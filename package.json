@@ -2,10 +2,8 @@
   "name": "valorem-subgraph",
   "license": "MIT",
   "scripts": {
-    "prepare:mainnet": "mustache config/1.json subgraph.template.yaml > subgraph.yaml",
-    "prepare:goerli": "mustache config/5.json subgraph.template.yaml > subgraph.yaml",
-    "prepare:arbitrum-one": "mustache config/42161.json subgraph.template.yaml > subgraph.yaml",
-    "prepare:arbitrum-goerli": "mustache config/421613.json subgraph.template.yaml > subgraph.yaml",
+    "prepare:arbitrum-one": "mustache config/42161.json subgraph.template.yaml > subgraph.yaml && mustache config/42161.json src/utils/price.template.ts > src/utils/price.ts",
+    "prepare:arbitrum-goerli": "mustache config/421613.json subgraph.template.yaml > subgraph.yaml && mustache config/421613.json src/utils/price.template.ts > src/utils/price.ts",
     "deploy:mainnet": "pnpm prepare:mainnet && graph deploy --product hosted-service TBD",
     "deploy:goerli": "pnpm prepare:goerli && graph deploy --product hosted-service nickadamson/test-goerli2",
     "deploy:arbitrum-one": "pnpm prepare:arbitrum-one && graph deploy --product hosted-service TBD",
