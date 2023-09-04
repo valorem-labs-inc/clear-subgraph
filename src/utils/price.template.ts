@@ -10,6 +10,9 @@ import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/Unisw
 import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import { ZERO_ADDRESS } from "./constants";
 
+// @ts-expect-error template
+const isTestnet = "{{network}}" === "arbitrum-goerli";
+
 const UNISWAP_V3_FACTORY_ADDRESS = "{{UNISWAP_V3_FACTORY_ADDRESS}}";
 
 const WETH_ADDRESS = "{{WETH_ADDRESS}}";
@@ -30,6 +33,9 @@ let MINIMUM_ETH_LOCKED = BigDecimal.fromString("60");
 
 // Gets ETHs price in USD using the DAI / WETH Uniswap V3 pool.
 export function getEthPriceInUSD(): BigDecimal {
+  // hardcode goerli price
+  if (isTestnet) return BigDecimal.fromString("1550");
+
   let factory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
@@ -78,6 +84,9 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 // Derives token price in ETH terms by using either the token / WETH pool,
 // or a whitelisted tokens WETH pool.
 export function findEthPerToken(tokenAddress: string): BigDecimal {
+  // hardcode goerli price
+  if (isTestnet) return BigDecimal.fromString("0.00064");
+
   const uniswapFactory = UniswapV3Factory.bind(
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
