@@ -1,6 +1,6 @@
 {
   "network": "arbitrum-one",
-  "startBlock": 0,
-  "ValoremOptionsClearinghouseAddress": "0x0000000000000000000000000000000000000000",
-  "TokenURIGeneratorAddress": "0x0000000000000000000000000000000000000000"
+  "startBlock": 127068796,
+  "ValoremOptionsClearinghouseAddress": "0x402A401B1944EBb5A3030F36Aa70d6b5794190c9",
+  "TokenURIGeneratorAddress": "0xFa13C98f14da92E88bB20D0B7C80865FF6e29359"
 }

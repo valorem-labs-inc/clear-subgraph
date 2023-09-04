@@ -1,6 +1,6 @@
 {
   "network": "arbitrum-goerli",
-  "startBlock": 14945620,
-  "ValoremOptionsClearinghouseAddress": "0x7513F78472606625A9B505912e3C80762f6C9Efb",
-  "TokenURIGeneratorAddress": "0x314Ac843423630ad49848f2335eF3312984434d2"
+  "startBlock": 38192905,
+  "ValoremOptionsClearinghouseAddress": "0x402A401B1944EBb5A3030F36Aa70d6b5794190c9",
+  "TokenURIGeneratorAddress": "0xFa13C98f14da92E88bB20D0B7C80865FF6e29359"
 }
