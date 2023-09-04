@@ -40,22 +40,27 @@ export function getEthPriceInUSD(): BigDecimal {
     Address.fromString(UNISWAP_V3_FACTORY_ADDRESS)
   );
 
-  let daiPoolAddress = factory.getPool(
+  let tryUsdcPoolAddress = factory.try_getPool(
     Address.fromString(WETH_ADDRESS),
-    Address.fromString("0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60"),
+    Address.fromString(USDC_ADDRESS),
     3000
   );
 
-  let daiPool = UniswapV3Pool.bind(daiPoolAddress);
+  if (tryUsdcPoolAddress.reverted) {
+    throw new Error("No USDC pool found");
+  }
+  const usdcPoolAddress = tryUsdcPoolAddress.value;
+
+  let usdcPool = UniswapV3Pool.bind(usdcPoolAddress);
 
   const tokenPrices = sqrtPriceX96ToTokenPrices(
-    daiPool.slot0().value0,
-    ERC20.bind(daiPool.token0()),
-    ERC20.bind(daiPool.token1())
+    usdcPool.slot0().value0,
+    ERC20.bind(usdcPool.token0()),
+    ERC20.bind(usdcPool.token1())
   );
 
   if (
-    daiPool
+    usdcPool
       .token0()
       .toHexString()
       .toLowerCase() == WETH_ADDRESS.toLowerCase()
@@ -96,11 +101,14 @@ export function findEthPerToken(tokenAddress: string): BigDecimal {
   }
 
   for (let i = 0; i < TOKEN_WHITELIST.length; i++) {
-    const poolAddress = uniswapFactory.getPool(
+    const tryPoolAddress = uniswapFactory.try_getPool(
       Address.fromString(tokenAddress),
       Address.fromString(TOKEN_WHITELIST[i]),
       3000
     );
+
+    if (tryPoolAddress.reverted) continue; // try next token
+    const poolAddress = tryPoolAddress.value;
 
     if (poolAddress.toHexString() != ZERO_ADDRESS) {
       let pool = UniswapV3Pool.bind(poolAddress);
