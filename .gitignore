@@ -2,3 +2,7 @@ generated/
 build/
 node_modules/
 .idea/
+
+# Ignore files that are prepared via templates
+subgraph.yaml
+src/utils/price.ts

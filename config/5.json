@@ -1,6 +1,0 @@
-{
-  "network": "goerli",
-  "startBlock": 8250905,
-  "ValoremOptionsClearinghouseAddress": "0x46c8F67675A3C95cA4D21c282A207D87829C56AA",
-  "TokenURIGeneratorAddress": "0xf7e3233F193F6f6dB5030CfEb458b670208D96A7"
-}
