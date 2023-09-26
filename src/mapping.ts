@@ -1,13 +1,18 @@
-import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
-
+import {
+  Address,
+  BigDecimal,
+  BigInt,
+  ethereum,
+  log,
+} from "@graphprotocol/graph-ts";
 import {
   OptionType,
   Claim,
   Account,
   ERC1155Contract,
   ERC1155Transfer,
+  Bucket,
 } from "../generated/schema";
-
 import {
   ValoremOptionsClearinghouse as OCHContract,
   ApprovalForAll as ApprovalForAllEvent,
@@ -25,8 +30,8 @@ import {
   BucketAssignedExercise as BucketAssignedExerciseEvent,
   BucketWrittenInto as BucketWrittenIntoEvent,
 } from "../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
-
 import { fetchAccount } from "./fetch/account";
+import { fetchBucket, fetchClaim } from "./fetch/bucket";
 import {
   fetchERC1155,
   fetchERC1155Balance,
@@ -34,7 +39,6 @@ import {
   fetchERC1155Token,
   replaceURI,
 } from "./fetch/erc1155";
-
 import {
   fetchValoremOptionsClearinghouse,
   fetchToken,
@@ -46,9 +50,9 @@ import {
   getTokenPriceUSD,
   ZERO_ADDRESS,
 } from "./utils";
-
 import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
 import { fetchTransaction } from "./fetch/transaction";
+import { RoundingMode, roundBigDecimalToBigInt } from "./utils/round";
 
 export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get params
@@ -78,7 +82,6 @@ export function handleNewOptionType(event: NewOptionTypeEvent): void {
   optionType.exerciseAmount = exerciseAmount;
   optionType.amountWritten = BigInt.fromI32(0);
   optionType.amountExercised = BigInt.fromI32(0);
-  optionType.claims = new Array<string>();
   optionType.save();
 }
 
@@ -94,19 +97,10 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   const underlyingToken = fetchToken(optionType.underlyingAsset);
   const writer = fetchAccount(writerAddress);
 
-  // initialize new Claim
-  const claim = new Claim(claimId);
-  claim.writer = writer.id;
-  claim.writeTx = fetchTransaction(event).id;
-  claim.amountWritten = numberOfOptions;
-  claim.redeemed = false;
-  claim.optionType = optionType.id;
+  // update entities
+  const claim = fetchClaim(claimId, optionId, writer.id, event);
+  claim.amountWritten = claim.amountWritten.plus(numberOfOptions);
   claim.save();
-
-  // add this claim to OptionType's claim pointer
-  const claimsWritten = optionType.claims;
-  claimsWritten.push(claimId);
-  optionType.claims = claimsWritten;
   optionType.amountWritten = optionType.amountWritten.plus(numberOfOptions);
   optionType.save();
 
@@ -126,6 +120,20 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
     event.address.toHexString(),
     null
   );
+}
+
+export function handleBucketWrittenInto(event: BucketWrittenIntoEvent): void {
+  // get params
+  const optionId = event.params.optionId.toString();
+  const claimId = event.params.claimId.toString();
+  const bucketIndex = event.params.bucketIndex;
+  const numberOfOptions = event.params.amount;
+
+  // get and update Bucket
+  const bucket = fetchBucket(optionId, bucketIndex, claimId);
+  const newAmountWritten = bucket.amountWritten.plus(numberOfOptions);
+  bucket.amountWritten = newAmountWritten;
+  bucket.save();
 }
 
 export function handleOptionsExercised(event: OptionsExercisedEvent): void {
@@ -165,6 +173,114 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
     event.address.toHexString(),
     null
   );
+}
+
+export function handleBucketAssignedExercise(
+  event: BucketAssignedExerciseEvent
+): void {
+  // get params
+  const optionId = event.params.optionId.toString();
+  const bucketIndex = event.params.bucketIndex;
+  const bucketId = optionId.concat("-").concat(bucketIndex.toString());
+  const amountAssigned = event.params.amountAssigned;
+  // get entities
+  const optionType = OptionType.load(optionId)!;
+  const bucket = Bucket.load(bucketId)!;
+
+  // calculate ratio of options exercised in this transaction to bucket's total options written
+  const exercisedRatio = amountAssigned.divDecimal(
+    bucket.amountWritten.toBigDecimal()
+  );
+
+  // update entities
+  optionType.amountExercised = optionType.amountExercised.plus(amountAssigned);
+  optionType.save();
+  if (optionType.amountExercised.gt(optionType.amountWritten)) {
+    log.critical(
+      "Allocation Error: OptionType has more options exercised than written. OptionId: {}",
+      [optionType.id]
+    );
+  }
+
+  bucket.amountExercised = bucket.amountExercised.plus(amountAssigned);
+  bucket.save();
+  if (bucket.amountExercised.gt(bucket.amountWritten)) {
+    log.critical(
+      "Bucket has more options exercised than written. BucketId: {}",
+      [bucket.id]
+    );
+  }
+
+  let allocatedAmount = amountAssigned.toBigDecimal(); // will always be an integer-only value
+
+  const bIdSig = `BucketID:${bucket.id}`;
+  const percentOfString = `${exercisedRatio
+    .times(BigDecimal.fromString("100"))
+    .toString()}% of the bucket's ${bucket.amountWritten.toString()} total options written.`;
+  const exerciseString = `Allocated exercises to distribute in bucket: ${allocatedAmount.toString()}; `;
+  log.info("Updating bucket assigned claim(s). {} --- {} --- {}", [
+    percentOfString,
+    exerciseString,
+    bIdSig,
+  ]);
+  for (let i = 0; i < bucket.claims.length; ++i) {
+    const claimId = bucket.claims[i];
+    const claim = Claim.load(claimId)!;
+    const logSignature = `Updating claim #${(
+      i + 1
+    ).toString()}/${bucket.claims.length.toString()} --- BucketID:${
+      bucket.id
+    }; ClaimID:${claim.id}`;
+    const optionsWritten = claim.amountWritten.toBigDecimal();
+    const numClaimOptionsExercised = optionsWritten.times(exercisedRatio);
+    // round to nearest integer
+    let rounded = roundBigDecimalToBigInt(numClaimOptionsExercised);
+    let newAmountExercised: BigInt = BigInt.fromI32(0);
+
+    if (i === bucket.claims.length - 1) {
+      // last claim in bucket so use all remaining allocatedAmount
+      if (numClaimOptionsExercised.toString() !== allocatedAmount.toString()) {
+        rounded = roundBigDecimalToBigInt(allocatedAmount, RoundingMode.UP);
+        newAmountExercised = claim.amountExercised.plus(rounded);
+        claim.amountExercised = newAmountExercised;
+        claim.save();
+      }
+    } else {
+      newAmountExercised = claim.amountExercised.plus(rounded);
+      claim.amountExercised = newAmountExercised;
+      claim.save();
+    }
+    allocatedAmount = allocatedAmount.minus(rounded.toBigDecimal());
+
+    log.info(
+      "'Exact' amount exercised (%wise): {} --- Rounded (& applied): {} --- Claim.amountExercised: {} --- {}",
+      [
+        numClaimOptionsExercised.toString(),
+        rounded.toString(),
+        claim.amountExercised.toString(),
+        logSignature,
+      ]
+    );
+
+    if (claim.amountExercised > claim.amountWritten) {
+      log.critical(
+        "Allocation Error: Claim has more options exercised than written. ClaimID: {}",
+        [claimId]
+      );
+    }
+    if (claim.amountExercised < BigInt.fromI32(0)) {
+      log.critical("Allocation Error: Claim has negative amount exercised", [
+        claimId,
+      ]);
+    }
+  }
+
+  if (allocatedAmount.toString() != "0") {
+    log.critical(
+      "Allocation Error: {} allocated amount remaining after distribution",
+      [allocatedAmount.toString()]
+    );
+  }
 }
 
 export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
@@ -213,30 +329,6 @@ export function handleClaimRedeemed(event: ClaimRedeemedEvent): void {
     event.address.toHexString(),
     redeemAmounts
   );
-}
-
-export function handleBucketAssignedExercise(
-  event: BucketAssignedExerciseEvent
-): void {
-  // get params
-  let optionId = event.params.optionId.toString();
-  let bucketIndex = event.params.bucketIndex;
-  let amountAssigned = event.params.amountAssigned;
-
-  // get entities
-  const optionType = OptionType.load(optionId)!;
-}
-
-export function handleBucketWrittenInto(event: BucketWrittenIntoEvent): void {
-  // get params
-  let optionId = event.params.optionId.toString();
-  let claimId = event.params.claimId.toString();
-  let bucketIndex = event.params.bucketIndex;
-  let amount = event.params.amount;
-
-  // get entities
-  const optionType = OptionType.load(optionId)!;
-  const claim = Claim.load(claimId)!;
 }
 
 export function handleFeeSwitchUpdated(event: FeeSwitchUpdatedEvent): void {

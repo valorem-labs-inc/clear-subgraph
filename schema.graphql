@@ -23,7 +23,9 @@ type OptionType @entity {
   amountExercised: BigInt!
 
   # Claims which collateralize this type of option
-  claims: [Claim!]!
+  claims: [Claim!]! @derivedFrom(field: "optionType")
+
+  buckets: [Bucket!]! @derivedFrom(field: "optionType")
 }
 
 type Claim @entity {
@@ -47,6 +49,25 @@ type Claim @entity {
 
   # The total number of fungible ERC-1155 Options that this claim corresponds to
   amountWritten: BigInt!
+  # The amount of ERC-1155 options assigned exercise for this claim
+  amountExercised: BigInt!
+
+  buckets: [Bucket!]! @derivedFrom(field: "claims")
+}
+
+type Bucket @entity {
+  # The optionTypeId + index of bucket
+  id: ID!
+
+  # The OptionType the Bucket belongs to
+  optionType: OptionType!
+  # The corresponding Claim tokens this bucket belongs to
+  claims: [Claim!]!
+
+  # The amount of ERC-1155 options written for this Bucket
+  amountWritten: BigInt!
+  # The amount of ERC-1155 options assigned Exercise for this Bucket
+  amountExercised: BigInt!
 }
 
 type DecimalValue @entity {
