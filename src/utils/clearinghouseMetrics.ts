@@ -1,16 +1,16 @@
-import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { ValoremOptionsClearinghouse } from "../../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
 import {
   ValoremOptionsClearinghouse as OCH,
   DayData,
   OptionType,
 } from "../../generated/schema";
-import { ValoremOptionsClearinghouse } from "../../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
-import { fetchDailyTokenMetrics, fetchToken } from "./tokens";
-import { exponentToBigDecimal, getTokenPriceUSD } from "./price";
-
-export * from "./tokens";
-export * from "./constants";
-export * from "./price";
+import {
+  getTokenPriceUSD,
+  exponentToBigDecimal,
+  fetchToken,
+  fetchDailyTokenMetrics,
+} from ".";
 
 export function fetchValoremOptionsClearinghouse(contractAddress: string): OCH {
   let och = OCH.load(contractAddress);
