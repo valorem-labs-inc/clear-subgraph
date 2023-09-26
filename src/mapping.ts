@@ -146,7 +146,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
   const underlyingToken = fetchToken(optionType.underlyingAsset);
   const exerciseToken = fetchToken(optionType.exerciseAsset);
 
-  // update OptionType
+  // update OptionType (Bucket.amountExercised updated in handleBucketAssignedExercise)
   optionType.amountExercised = optionType.amountExercised.plus(numberOfOptions);
   optionType.save();
 
@@ -192,18 +192,10 @@ export function handleBucketAssignedExercise(
     bucket.amountWritten.toBigDecimal()
   );
 
-  // update entities
-  optionType.amountExercised = optionType.amountExercised.plus(amountAssigned);
-  optionType.save();
-  if (optionType.amountExercised.gt(optionType.amountWritten)) {
-    log.error(
-      "Allocation Error: OptionType has more options exercised than written. OptionId: {}",
-      [optionType.id]
-    );
-  }
-
+  // update Bucket (optionType.amountExercised updated in handleOptionsExercised)
   bucket.amountExercised = bucket.amountExercised.plus(amountAssigned);
   bucket.save();
+
   if (bucket.amountExercised.gt(bucket.amountWritten)) {
     log.error("Bucket has more options exercised than written. BucketId: {}", [
       bucket.id,
