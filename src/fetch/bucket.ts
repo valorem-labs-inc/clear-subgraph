@@ -1,8 +1,8 @@
 import { BigInt, ethereum } from "@graphprotocol/graph-ts";
-
 import { Bucket, Claim } from "../../generated/schema";
 import { fetchTransaction } from "./transaction";
 import { fetchAccount } from "./account";
+
 /**
  * Searches for and returns a Bucket, initializing a new one if not found
  * @param {string} optionTypeId

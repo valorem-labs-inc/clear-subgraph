@@ -5,11 +5,8 @@
  */
 
 import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
-
 import { DecimalValue } from "../generated/schema";
-
 import { constants } from "./constants";
-
 import { integers } from "./integers";
 
 export namespace decimals {

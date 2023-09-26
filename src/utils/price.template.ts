@@ -8,7 +8,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { UniswapV3Factory } from "../../generated/ValoremOptionsClearinghouse/UniswapV3Factory";
 import { UniswapV3Pool } from "../../generated/ValoremOptionsClearinghouse/UniswapV3Pool";
 import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
-import { ZERO_ADDRESS } from "./constants";
+import { constants } from "../constants";
 
 // @ts-expect-error template
 const isTestnet = "{{network}}" === "arbitrum-goerli";
@@ -78,7 +78,8 @@ export function getTokenPriceUSD(tokenAddress: string): BigDecimal {
 
   if (
     tokenAddress.toLowerCase() == WETH_ADDRESS.toLowerCase() ||
-    tokenAddress.toLowerCase() == ZERO_ADDRESS.toLowerCase()
+    tokenAddress.toLowerCase() ==
+      constants.ADDRESS_ZERO.toHexString().toLowerCase()
   ) {
     return ethPriceUSD;
   }
@@ -110,7 +111,10 @@ function findEthPerToken(tokenAddress: string): BigDecimal {
     if (tryPoolAddress.reverted) continue; // try next token
     const poolAddress = tryPoolAddress.value;
 
-    if (poolAddress.toHexString() != ZERO_ADDRESS) {
+    if (
+      poolAddress.toHexString().toLowerCase() !=
+      constants.ADDRESS_ZERO.toHexString().toLowerCase()
+    ) {
       let pool = UniswapV3Pool.bind(poolAddress);
       let token0Address = pool.token0();
       let token1Address = pool.token1();

@@ -24,15 +24,18 @@ import {
   BucketAssignedExercise as BucketAssignedExerciseEvent,
   BucketWrittenInto as BucketWrittenIntoEvent,
 } from "../generated/ValoremOptionsClearinghouse/ValoremOptionsClearinghouse";
-import { fetchAccount } from "./fetch/account";
-import { fetchBucket, fetchClaim } from "./fetch/bucket";
+import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
 import {
+  fetchAccount,
+  fetchBucket,
+  fetchClaim,
   fetchERC1155,
   fetchERC1155Balance,
   fetchERC1155Operator,
   fetchERC1155Token,
   replaceURI,
-} from "./fetch/erc1155";
+  fetchTransaction,
+} from "./fetch";
 import {
   fetchValoremOptionsClearinghouse,
   fetchToken,
@@ -42,11 +45,10 @@ import {
   RedeemOrTransferAmounts,
   exponentToBigDecimal,
   getTokenPriceUSD,
-  ZERO_ADDRESS,
+  RoundingMode,
+  roundBigDecimalToBigInt,
 } from "./utils";
-import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
-import { fetchTransaction } from "./fetch/transaction";
-import { RoundingMode, roundBigDecimalToBigInt } from "./utils/round";
+import { constants } from "./constants";
 
 export function handleNewOptionType(event: NewOptionTypeEvent): void {
   // get params
@@ -366,7 +368,10 @@ export function handleFeeSwept(event: FeeSweptEvent): void {
 
 // checks if transfer is an OCH Write/Exercise/Redeem event (mint/burn)
 function isMintOrBurn(from: string, to: string): boolean {
-  return from == ZERO_ADDRESS || to == ZERO_ADDRESS;
+  return (
+    from == constants.ADDRESS_ZERO.toHexString() ||
+    to == constants.ADDRESS_ZERO.toHexString()
+  );
 }
 
 /**

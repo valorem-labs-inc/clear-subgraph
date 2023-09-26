@@ -5,15 +5,13 @@
  */
 
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { Token, TokenDayData } from "../../generated/schema";
+import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 import {
   getBeginningOfDayInSeconds,
   fetchDailyOCHMetrics,
   SECONDS_IN_DAY,
 } from ".";
-
-import { Token, TokenDayData } from "../../generated/schema";
-
-import { ERC20 } from "../../generated/ValoremOptionsClearinghouse/ERC20";
 
 /**
  *Searches for and returns an ERC-1155 Token, initializing a new one if not found
