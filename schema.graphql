@@ -25,6 +25,7 @@ type OptionType @entity {
   # Claims which collateralize this type of option
   claims: [Claim!]! @derivedFrom(field: "optionType")
 
+  # The exercise assignment buckets for this OptionType
   buckets: [Bucket!]! @derivedFrom(field: "optionType")
 }
 
@@ -52,6 +53,7 @@ type Claim @entity {
   # The amount of ERC-1155 options assigned exercise for this claim
   amountExercised: BigInt!
 
+  # The bucket(s) that this claim is assigned to
   buckets: [Bucket!]! @derivedFrom(field: "claims")
 }
 
@@ -59,14 +61,14 @@ type Bucket @entity {
   # The optionTypeId + index of bucket
   id: ID!
 
-  # The OptionType the Bucket belongs to
+  # The OptionType the bucket belongs to
   optionType: OptionType!
-  # The corresponding Claim tokens this bucket belongs to
+  # The corresponding Claim token(s) this bucket is tracking
   claims: [Claim!]!
 
-  # The amount of ERC-1155 options written for this Bucket
+  # The amount of ERC-1155 options written for this bucket
   amountWritten: BigInt!
-  # The amount of ERC-1155 options assigned Exercise for this Bucket
+  # The amount of ERC-1155 options assigned exercise for this bucket
   amountExercised: BigInt!
 }
 

@@ -8,7 +8,6 @@ import { fetchAccount } from "./account";
  * @param {string} optionTypeId
  * @param {number} bucketIndex
  * @param {string} claimId
- * @param {ethereum.Event} event
  * @return {Bucket}
  */
 export function fetchBucket(

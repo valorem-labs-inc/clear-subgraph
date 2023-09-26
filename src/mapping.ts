@@ -1,10 +1,4 @@
-import {
-  Address,
-  BigDecimal,
-  BigInt,
-  ethereum,
-  log,
-} from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum } from "@graphprotocol/graph-ts";
 import {
   OptionType,
   Claim,
@@ -183,12 +177,12 @@ export function handleBucketAssignedExercise(
   const bucketIndex = event.params.bucketIndex;
   const bucketId = optionId.concat("-").concat(bucketIndex.toString());
   const amountAssigned = event.params.amountAssigned;
+
   // get entities
-  const optionType = OptionType.load(optionId)!;
   const bucket = Bucket.load(bucketId)!;
 
-  // calculate ratio of options exercised in this transaction to bucket's total options written
-  const exercisedRatio = amountAssigned.divDecimal(
+  // calculate the bucket's ratio of options exercised to options written
+  const bucketExerciseRatio = amountAssigned.divDecimal(
     bucket.amountWritten.toBigDecimal()
   );
 
@@ -196,35 +190,17 @@ export function handleBucketAssignedExercise(
   bucket.amountExercised = bucket.amountExercised.plus(amountAssigned);
   bucket.save();
 
-  if (bucket.amountExercised.gt(bucket.amountWritten)) {
-    log.error("Bucket has more options exercised than written. BucketId: {}", [
-      bucket.id,
-    ]);
-  }
-
-  let allocatedAmount = amountAssigned.toBigDecimal(); // will always be an integer-only value
-
-  const bIdSig = `BucketID:${bucket.id}`;
-  const percentOfString = `${exercisedRatio
-    .times(BigDecimal.fromString("100"))
-    .toString()}% of the bucket's ${bucket.amountWritten.toString()} total options written.`;
-  const exerciseString = `Allocated exercises to distribute in bucket: ${allocatedAmount.toString()}; `;
-  log.info("Updating bucket assigned claim(s). {} --- {} --- {}", [
-    percentOfString,
-    exerciseString,
-    bIdSig,
-  ]);
+  // will be kept as integer-only value for duration of loop, just needed to calculate ratio
+  let allocatedAmount = amountAssigned.toBigDecimal();
   for (let i = 0; i < bucket.claims.length; ++i) {
     const claimId = bucket.claims[i];
     const claim = Claim.load(claimId)!;
-    const logSignature = `Updating claim #${(
-      i + 1
-    ).toString()}/${bucket.claims.length.toString()} --- BucketID:${
-      bucket.id
-    }; ClaimID:${claim.id}`;
+
+    // calculate number of options exercised for this claim by multiplying bucket ratio by amount written
     const optionsWritten = claim.amountWritten.toBigDecimal();
-    const numClaimOptionsExercised = optionsWritten.times(exercisedRatio);
-    // round to nearest integer
+    const numClaimOptionsExercised = optionsWritten.times(bucketExerciseRatio);
+
+    // round to NEAREST integer
     let rounded = roundBigDecimalToBigInt(numClaimOptionsExercised);
     let newAmountExercised: BigInt = BigInt.fromI32(0);
 
@@ -237,40 +213,14 @@ export function handleBucketAssignedExercise(
         claim.save();
       }
     } else {
+      // more claims remain in loop, so use rounded amount
       newAmountExercised = claim.amountExercised.plus(rounded);
       claim.amountExercised = newAmountExercised;
       claim.save();
     }
+
+    // subtract the amount exercised assigned to this claim from the allocated amount
     allocatedAmount = allocatedAmount.minus(rounded.toBigDecimal());
-
-    log.info(
-      "'Exact' amount exercised (%wise): {} --- Rounded (& applied): {} --- Claim.amountExercised: {} --- {}",
-      [
-        numClaimOptionsExercised.toString(),
-        rounded.toString(),
-        claim.amountExercised.toString(),
-        logSignature,
-      ]
-    );
-
-    if (claim.amountExercised > claim.amountWritten) {
-      log.error(
-        "Allocation Error: Claim has more options exercised than written. ClaimID: {}",
-        [claimId]
-      );
-    }
-    if (claim.amountExercised < BigInt.fromI32(0)) {
-      log.error("Allocation Error: Claim has negative amount exercised", [
-        claimId,
-      ]);
-    }
-  }
-
-  if (allocatedAmount.toString() != "0") {
-    log.error(
-      "Allocation Error: {} allocated amount remaining after distribution",
-      [allocatedAmount.toString()]
-    );
   }
 }
 
