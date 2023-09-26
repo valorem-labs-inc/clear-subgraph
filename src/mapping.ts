@@ -196,7 +196,7 @@ export function handleBucketAssignedExercise(
   optionType.amountExercised = optionType.amountExercised.plus(amountAssigned);
   optionType.save();
   if (optionType.amountExercised.gt(optionType.amountWritten)) {
-    log.critical(
+    log.error(
       "Allocation Error: OptionType has more options exercised than written. OptionId: {}",
       [optionType.id]
     );
@@ -205,10 +205,9 @@ export function handleBucketAssignedExercise(
   bucket.amountExercised = bucket.amountExercised.plus(amountAssigned);
   bucket.save();
   if (bucket.amountExercised.gt(bucket.amountWritten)) {
-    log.critical(
-      "Bucket has more options exercised than written. BucketId: {}",
-      [bucket.id]
-    );
+    log.error("Bucket has more options exercised than written. BucketId: {}", [
+      bucket.id,
+    ]);
   }
 
   let allocatedAmount = amountAssigned.toBigDecimal(); // will always be an integer-only value
@@ -263,20 +262,20 @@ export function handleBucketAssignedExercise(
     );
 
     if (claim.amountExercised > claim.amountWritten) {
-      log.critical(
+      log.error(
         "Allocation Error: Claim has more options exercised than written. ClaimID: {}",
         [claimId]
       );
     }
     if (claim.amountExercised < BigInt.fromI32(0)) {
-      log.critical("Allocation Error: Claim has negative amount exercised", [
+      log.error("Allocation Error: Claim has negative amount exercised", [
         claimId,
       ]);
     }
   }
 
   if (allocatedAmount.toString() != "0") {
-    log.critical(
+    log.error(
       "Allocation Error: {} allocated amount remaining after distribution",
       [allocatedAmount.toString()]
     );
