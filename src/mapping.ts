@@ -97,6 +97,7 @@ export function handleOptionsWritten(event: OptionsWrittenEvent): void {
   const claim = fetchClaim(claimId, optionId, writer.id, event);
   claim.amountWritten = claim.amountWritten.plus(numberOfOptions);
   claim.save();
+
   optionType.amountWritten = optionType.amountWritten.plus(numberOfOptions);
   optionType.save();
 
@@ -127,8 +128,8 @@ export function handleBucketWrittenInto(event: BucketWrittenIntoEvent): void {
 
   // get and update Bucket
   const bucket = fetchBucket(optionId, bucketIndex, claimId);
-  const newAmountWritten = bucket.amountWritten.plus(numberOfOptions);
-  bucket.amountWritten = newAmountWritten;
+  const newBucketAmountWritten = bucket.amountWritten.plus(numberOfOptions);
+  bucket.amountWritten = newBucketAmountWritten;
   bucket.save();
 }
 
@@ -183,14 +184,15 @@ export function handleBucketAssignedExercise(
   // get entities
   const bucket = Bucket.load(bucketId)!;
 
+  // update Bucket (optionType.amountExercised updated in handleOptionsExercised)
+  const newBucketAmountExercised = bucket.amountExercised.plus(amountAssigned);
+  bucket.amountExercised = newBucketAmountExercised;
+  bucket.save();
+
   // calculate the bucket's ratio of options exercised to options written
   const bucketExerciseRatio = amountAssigned.divDecimal(
     bucket.amountWritten.toBigDecimal()
   );
-
-  // update Bucket (optionType.amountExercised updated in handleOptionsExercised)
-  bucket.amountExercised = bucket.amountExercised.plus(amountAssigned);
-  bucket.save();
 
   // will be kept as integer-only value for duration of loop, just needed to calculate ratio
   let allocatedAmount = amountAssigned.toBigDecimal();

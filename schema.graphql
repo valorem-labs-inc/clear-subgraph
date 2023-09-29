@@ -58,17 +58,18 @@ type Claim @entity {
 }
 
 type Bucket @entity {
-  # The optionTypeId + index of bucket
+  # The optionId + index of bucket
+  # `{optionId}-{bucketIndex}`
   id: ID!
 
   # The OptionType the bucket belongs to
   optionType: OptionType!
-  # The corresponding Claim token(s) this bucket is tracking
+  # The corresponding claim(s) for this bucket
   claims: [Claim!]!
 
-  # The amount of ERC-1155 options written for this bucket
+  # The total amount of ERC-1155 options written for this bucket
   amountWritten: BigInt!
-  # The amount of ERC-1155 options assigned exercise for this bucket
+  # The total amount of ERC-1155 options assigned exercise for this bucket
   amountExercised: BigInt!
 }
 
