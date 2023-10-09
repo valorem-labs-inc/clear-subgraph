@@ -31,31 +31,6 @@ export function fetchOptionTypeBucket(
   return optionTypeBucket;
 }
 
-// /**
-//  * Searches for and returns a ClaimBucket, initializing a new one if not found
-//  * @param {string} claimBucketId
-//  * @return {ClaimBucket}
-//  */
-// export function fetchClaimBucket(claimBucketId: string): ClaimBucket {
-//   const idArr = claimBucketId.split("-");
-//   const claimId = idArr[0];
-//   const bucketId = idArr[1].concat("-").concat(idArr[2]);
-
-//   log.error("claimId {}, bucketId {}", [claimId, bucketId]);
-
-//   let claimBucket = ClaimBucket.load(claimBucketId);
-//   if (claimBucket) return claimBucket;
-
-//   claimBucket = new ClaimBucket(claimBucketId);
-//   claimBucket.claim = claimId;
-//   claimBucket.bucket = bucketId;
-//   claimBucket.amountWritten = BigInt.fromI32(0);
-//   claimBucket.amountExercised = BigInt.fromI32(0);
-//   claimBucket.save();
-
-//   return claimBucket;
-// }
-
 /**
  * Searches for and returns a ClaimBucket, initializing a new one if not found
  * @param {string} optionId
