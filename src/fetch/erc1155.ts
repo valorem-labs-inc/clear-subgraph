@@ -5,7 +5,6 @@
  */
 
 import { Address, BigInt } from "@graphprotocol/graph-ts";
-
 import {
   Account,
   ERC1155Contract,
@@ -13,12 +12,9 @@ import {
   ERC1155Balance,
   ERC1155Operator,
 } from "../../generated/schema";
-
 import { IERC1155MetadataURI } from "../../generated/ValoremOptionsClearinghouse/IERC1155MetadataURI";
-
 import { constants } from "../constants";
-
-import { fetchAccount } from "../fetch/account";
+import { fetchAccount } from ".";
 
 export function replaceURI(uri: string, identifier: BigInt): string {
   return uri.replaceAll(
