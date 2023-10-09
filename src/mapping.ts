@@ -396,7 +396,12 @@ function handleERC1155TransferMetrics(
     const tokenType = och.tokenType(tokenId);
 
     // load entities for calculating metrics
-    const optionType = OptionType.load(tokenId.toString())!;
+    let optionType = OptionType.load(tokenId.toString());
+    if (!optionType) {
+      // if optionType is null, then this is a claim
+      const claim = Claim.load(tokenId.toString())!;
+      optionType = OptionType.load(claim.optionType)!;
+    }
 
     let transferAmounts = new RedeemOrTransferAmounts();
 
