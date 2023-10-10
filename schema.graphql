@@ -26,7 +26,7 @@ type OptionType @entity {
   claims: [Claim!]! @derivedFrom(field: "optionType")
 
   # The exercise assignment buckets for this OptionType
-  buckets: [Bucket!]! @derivedFrom(field: "optionType")
+  buckets: [OptionTypeBucket!]! @derivedFrom(field: "optionType")
 }
 
 type Claim @entity {
@@ -54,22 +54,38 @@ type Claim @entity {
   amountExercised: BigInt!
 
   # The bucket(s) that this claim is assigned to
-  buckets: [Bucket!]! @derivedFrom(field: "claims")
+  claimBuckets: [ClaimBucket!]!
 }
 
-type Bucket @entity {
+type OptionTypeBucket @entity {
   # The optionId + index of bucket
   # `{optionId}-{bucketIndex}`
   id: ID!
 
   # The OptionType the bucket belongs to
   optionType: OptionType!
-  # The corresponding claim(s) for this bucket
-  claims: [Claim!]!
+  # The corresponding claimBucket(s) for this optionTypeBucket
+  claimBuckets: [ClaimBucket!]!
 
-  # The total amount of ERC-1155 options written for this bucket
+  # The total amount of ERC-1155 options written for this optionTypeBucket
   amountWritten: BigInt!
-  # The total amount of ERC-1155 options assigned exercise for this bucket
+  # The total amount of ERC-1155 options assigned exercise for this optionTypeBucket
+  amountExercised: BigInt!
+}
+
+type ClaimBucket @entity {
+  # The claimId + OptionTypeBucketId
+  # `{claimId}-{optionTypeBucketId}`
+  id: ID!
+
+  # The Claim the bucket belongs to
+  claim: Claim!
+  # The corresponding optionTypeBucket
+  optionTypeBucket: OptionTypeBucket!
+
+  # The total amount of ERC-1155 options written for this claimBucket
+  amountWritten: BigInt!
+  # The total amount of ERC-1155 options assigned exercise for this claimBucket
   amountExercised: BigInt!
 }
 

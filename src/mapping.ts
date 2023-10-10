@@ -5,7 +5,7 @@ import {
   Account,
   ERC1155Contract,
   ERC1155Transfer,
-  Bucket,
+  ClaimBucket,
 } from "../generated/schema";
 import {
   ValoremOptionsClearinghouse as OCHContract,
@@ -27,7 +27,8 @@ import {
 import { ERC20 } from "../generated/ValoremOptionsClearinghouse/ERC20";
 import {
   fetchAccount,
-  fetchBucket,
+  fetchOptionTypeBucket,
+  fetchClaimBucket,
   fetchClaim,
   fetchERC1155,
   fetchERC1155Balance,
@@ -126,11 +127,45 @@ export function handleBucketWrittenInto(event: BucketWrittenIntoEvent): void {
   const bucketIndex = event.params.bucketIndex;
   const numberOfOptions = event.params.amount;
 
-  // get and update Bucket
-  const bucket = fetchBucket(optionId, bucketIndex, claimId);
-  const newBucketAmountWritten = bucket.amountWritten.plus(numberOfOptions);
-  bucket.amountWritten = newBucketAmountWritten;
-  bucket.save();
+  // get claim
+  const claim = Claim.load(claimId)!;
+
+  // get buckets
+  const optionTypeBucket = fetchOptionTypeBucket(optionId, bucketIndex);
+  const claimBucket = fetchClaimBucket(optionId, bucketIndex, claimId);
+
+  // update bucket amounts
+  const newOptionTypeBucketWritten = optionTypeBucket.amountWritten.plus(
+    numberOfOptions
+  );
+  optionTypeBucket.amountWritten = newOptionTypeBucketWritten;
+  optionTypeBucket.save();
+
+  const newClaimBucketWritten = claimBucket.amountWritten.plus(numberOfOptions);
+  claimBucket.amountWritten = newClaimBucketWritten;
+  claimBucket.save();
+
+  // add claimBucket to optionTypeBucket if not already in array
+  if (!optionTypeBucket.claimBuckets.includes(claimBucket.id)) {
+    let optionTypeBucketClaimBuckets = optionTypeBucket.claimBuckets;
+    optionTypeBucketClaimBuckets.push(claimBucket.id);
+    optionTypeBucket.claimBuckets = optionTypeBucketClaimBuckets;
+    optionTypeBucket.save();
+  }
+
+  // add claimBucket to claim if not already in array
+  if (!claim.claimBuckets.includes(claimBucket.id)) {
+    let claimClaimBuckets = claim.claimBuckets;
+    claimClaimBuckets.push(claimBucket.id);
+    claim.claimBuckets = claimClaimBuckets;
+    claim.save();
+  }
+}
+
+function verifyAmounts(amountWritten: BigInt, amountExercised: BigInt): void {
+  if (amountExercised > amountWritten) {
+    throw new Error("Amount exercised is greater than amount written");
+  }
 }
 
 export function handleOptionsExercised(event: OptionsExercisedEvent): void {
@@ -145,6 +180,7 @@ export function handleOptionsExercised(event: OptionsExercisedEvent): void {
 
   // update OptionType (Bucket.amountExercised updated in handleBucketAssignedExercise)
   optionType.amountExercised = optionType.amountExercised.plus(numberOfOptions);
+  verifyAmounts(optionType.amountWritten, optionType.amountExercised);
   optionType.save();
 
   // update tokens' TVL
@@ -178,52 +214,77 @@ export function handleBucketAssignedExercise(
   // get params
   const optionId = event.params.optionId.toString();
   const bucketIndex = event.params.bucketIndex;
-  const bucketId = optionId.concat("-").concat(bucketIndex.toString());
   const amountAssigned = event.params.amountAssigned;
 
   // get entities
-  const bucket = Bucket.load(bucketId)!;
+  const optionTypeBucket = fetchOptionTypeBucket(optionId, bucketIndex);
 
-  // update Bucket (optionType.amountExercised updated in handleOptionsExercised)
-  const newBucketAmountExercised = bucket.amountExercised.plus(amountAssigned);
-  bucket.amountExercised = newBucketAmountExercised;
-  bucket.save();
+  // update optionTypeBucket
+  const newBucketAmountExercised = optionTypeBucket.amountExercised.plus(
+    amountAssigned
+  );
+  optionTypeBucket.amountExercised = newBucketAmountExercised;
+  verifyAmounts(
+    optionTypeBucket.amountWritten,
+    optionTypeBucket.amountExercised
+  ); // verify that amountExercised <= amountWritten
+  optionTypeBucket.save();
 
   // calculate the bucket's ratio of options exercised to options written
   const bucketExerciseRatio = amountAssigned.divDecimal(
-    bucket.amountWritten.toBigDecimal()
+    optionTypeBucket.amountWritten.toBigDecimal()
   );
 
   // will be kept as integer-only value for duration of loop, just needed to calculate ratio
   let allocatedAmount = amountAssigned.toBigDecimal();
-  for (let i = 0; i < bucket.claims.length; ++i) {
-    const claimId = bucket.claims[i];
+
+  const claimBuckets = optionTypeBucket.claimBuckets;
+  // loop through claimBuckets, assigning the appropriate amount of options exercised to each.
+  // then after updating the claimBucket, update the claim's amountExercised by looping through
+  // each of the claim's claimBuckets' amountExercised
+  for (let i = 0; i < claimBuckets.length; ++i) {
+    // load ClaimBucket and Claim
+    const idArray = claimBuckets[i].split("-");
+    const optionTypeId = idArray[1];
+    const bucketIndex = BigInt.fromString(idArray[2]);
+    const claimId = idArray[0];
+    const claimBucket = fetchClaimBucket(optionTypeId, bucketIndex, claimId);
     const claim = Claim.load(claimId)!;
 
-    // calculate number of options exercised for this claim by multiplying bucket ratio by amount written
-    const optionsWritten = claim.amountWritten.toBigDecimal();
-    const numClaimOptionsExercised = optionsWritten.times(bucketExerciseRatio);
+    // Handle ClaimBucket amounts: calculate number of options exercised for this claimBucket by multiplying bucket ratio by amount written
+    const claimBucketWritten = claimBucket.amountWritten.toBigDecimal();
+    const claimBucketExercised = claimBucketWritten.times(bucketExerciseRatio);
 
-    // round to NEAREST integer
-    let rounded = roundBigDecimalToBigInt(numClaimOptionsExercised);
-    let newAmountExercised: BigInt = BigInt.fromI32(0);
+    // round the decimal claimBucketExercised to NEAREST integer
+    let rounded = roundBigDecimalToBigInt(claimBucketExercised);
+    // initialize variable for the claimBucket's new amountExercised
+    let newClaimBucketExercised: BigInt = BigInt.fromI32(0);
 
-    if (i === bucket.claims.length - 1) {
-      // last claim in bucket so use all remaining allocatedAmount
-      if (numClaimOptionsExercised.toString() !== allocatedAmount.toString()) {
-        rounded = roundBigDecimalToBigInt(allocatedAmount, RoundingMode.UP);
-        newAmountExercised = claim.amountExercised.plus(rounded);
-        claim.amountExercised = newAmountExercised;
-        claim.save();
-      }
+    if (i === claimBuckets.length - 1) {
+      // if this is the last claimBucket for the optionTypeBucket, use all remaining allocatedAmount instead
+      rounded = roundBigDecimalToBigInt(allocatedAmount);
+      newClaimBucketExercised = claimBucket.amountExercised.plus(rounded);
+      claimBucket.amountExercised = newClaimBucketExercised;
     } else {
-      // more claims remain in loop, so use rounded amount
-      newAmountExercised = claim.amountExercised.plus(rounded);
-      claim.amountExercised = newAmountExercised;
-      claim.save();
+      // otherwise, use the rounded amount
+      newClaimBucketExercised = claimBucket.amountExercised.plus(rounded);
+      claimBucket.amountExercised = newClaimBucketExercised;
     }
+    verifyAmounts(claimBucket.amountWritten, claimBucket.amountExercised); // verify that amountExercised <= amountWritten
+    claimBucket.save();
 
-    // subtract the amount exercised assigned to this claim from the allocated amount
+    // Handle Claim amounts: update claim's amountExercised by iterating through its claimBuckets
+    let newClaimExercised = BigInt.fromI32(0);
+    for (let j = 0; j < claim.claimBuckets.length; ++j) {
+      const _claimBucketId = claim.claimBuckets[j];
+      const _claimBucket = ClaimBucket.load(_claimBucketId)!;
+      newClaimExercised = newClaimExercised.plus(_claimBucket.amountExercised);
+    }
+    claim.amountExercised = newClaimExercised;
+    verifyAmounts(claim.amountWritten, claim.amountExercised); // verify that amountExercised <= amountWritten
+    claim.save();
+
+    // subtract the amount exercised assigned to this claim from the allocated amount before moving on to the next claimBucket
     allocatedAmount = allocatedAmount.minus(rounded.toBigDecimal());
   }
 }
@@ -396,7 +457,12 @@ function handleERC1155TransferMetrics(
     const tokenType = och.tokenType(tokenId);
 
     // load entities for calculating metrics
-    const optionType = OptionType.load(tokenId.toString())!;
+    let optionType = OptionType.load(tokenId.toString());
+    if (!optionType) {
+      // if optionType is null, then this is a claim
+      const claim = Claim.load(tokenId.toString())!;
+      optionType = OptionType.load(claim.optionType)!;
+    }
 
     let transferAmounts = new RedeemOrTransferAmounts();
 

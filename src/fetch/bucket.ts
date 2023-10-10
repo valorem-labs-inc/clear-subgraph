@@ -1,74 +1,67 @@
 import { BigInt, ethereum } from "@graphprotocol/graph-ts";
-import { Bucket, Claim } from "../../generated/schema";
+import { OptionTypeBucket, ClaimBucket, Claim } from "../../generated/schema";
 import { fetchTransaction } from "./transaction";
 import { fetchAccount } from "./account";
 
 /**
- * Searches for and returns a Bucket, initializing a new one if not found
+ * Searches for and returns an OptionTypeBucket, initializing a new one if not found
+ * @param {string} optionId
+ * @param {number} bucketIndex
+ * @return {OptionTypeBucket}
+ */
+export function fetchOptionTypeBucket(
+  optionId: string,
+  bucketIndex: BigInt
+): OptionTypeBucket {
+  const optionTypeBucketId = optionId
+    .concat("-")
+    .concat(bucketIndex.toString())
+    .toLowerCase();
+
+  let optionTypeBucket = OptionTypeBucket.load(optionTypeBucketId);
+  if (optionTypeBucket) return optionTypeBucket;
+
+  optionTypeBucket = new OptionTypeBucket(optionTypeBucketId);
+  optionTypeBucket.optionType = optionId;
+  optionTypeBucket.claimBuckets = [];
+  optionTypeBucket.amountWritten = BigInt.fromI32(0);
+  optionTypeBucket.amountExercised = BigInt.fromI32(0);
+  optionTypeBucket.save();
+
+  return optionTypeBucket;
+}
+
+/**
+ * Searches for and returns a ClaimBucket, initializing a new one if not found
  * @param {string} optionId
  * @param {number} bucketIndex
  * @param {string} claimId
- * @return {Bucket}
+ * @return {ClaimBucket}
  */
-export function fetchBucket(
+export function fetchClaimBucket(
   optionId: string,
   bucketIndex: BigInt,
   claimId: string
-): Bucket {
-  const bucketId = optionId.concat("-").concat(bucketIndex.toString());
+): ClaimBucket {
+  const optionTypeBucket = fetchOptionTypeBucket(optionId, bucketIndex);
 
-  let bucket = Bucket.load(bucketId);
-  if (bucket) {
-    if (!bucket.claims.includes(claimId)) {
-      const claims = bucket.claims;
-      claims.push(claimId);
-      bucket.claims = claims;
-      bucket.save();
-    }
-    return bucket;
-  }
+  const claimBucketId = claimId
+    .concat("-")
+    .concat(optionTypeBucket.id)
+    .toLowerCase();
 
-  bucket = new Bucket(bucketId);
+  let claimBucket = ClaimBucket.load(claimBucketId);
+  if (claimBucket) return claimBucket;
 
-  let optionTypeId = optionId;
-  let isClaim = Claim.load(optionId) != null;
-  if (isClaim) {
-    optionTypeId = Claim.load(optionId)!.optionType;
-  }
+  claimBucket = new ClaimBucket(claimBucketId);
+  claimBucket.claim = claimId;
+  claimBucket.optionTypeBucket = optionTypeBucket.id;
+  claimBucket.amountWritten = BigInt.fromI32(0);
+  claimBucket.amountExercised = BigInt.fromI32(0);
+  claimBucket.save();
 
-  bucket.optionType = optionTypeId;
-  bucket.claims = [claimId];
-  bucket.amountWritten = BigInt.fromI32(0);
-  bucket.amountExercised = BigInt.fromI32(0);
-  bucket.save();
-
-  return bucket;
+  return claimBucket;
 }
-
-// /**
-//  * Searches for and returns a ClaimBucket, initializing a new one if not found
-//  * @param {string} claimBucketId
-//  * @return {ClaimBucket}
-//  */
-// export function fetchClaimBucket(claimBucketId: string): ClaimBucket {
-//   const idArr = claimBucketId.split("-");
-//   const claimId = idArr[0];
-//   const bucketId = idArr[1].concat("-").concat(idArr[2]);
-
-//   log.error("claimId {}, bucketId {}", [claimId, bucketId]);
-
-//   let claimBucket = ClaimBucket.load(claimBucketId);
-//   if (claimBucket) return claimBucket;
-
-//   claimBucket = new ClaimBucket(claimBucketId);
-//   claimBucket.claim = claimId;
-//   claimBucket.bucket = bucketId;
-//   claimBucket.amountWritten = BigInt.fromI32(0);
-//   claimBucket.amountExercised = BigInt.fromI32(0);
-//   claimBucket.save();
-
-//   return claimBucket;
-// }
 
 /**
  * Searches for and returns a Claim, initializing a new one if not found
@@ -94,6 +87,7 @@ export function fetchClaim(
   claim.redeemed = false;
   claim.amountWritten = BigInt.fromString("0");
   claim.amountExercised = BigInt.fromString("0");
+  claim.claimBuckets = [];
   claim.save();
   return claim;
 }
